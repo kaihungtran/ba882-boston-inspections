@@ -1,0 +1,4 @@
+requests
+google-cloud-storage
+google-cloud-bigquery
+apache-airflow-providers-google

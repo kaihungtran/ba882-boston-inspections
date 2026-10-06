@@ -1,0 +1,56 @@
+# Secrets
+.env
+*.json.key
+*service-account*.json
+credentials/
+gcp-key*.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# Data (keep data in GCS/BigQuery, not git)
+data/*
+!data/.gitkeep
+*.parquet
+*.csv
+!**/seeds/*.csv
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/profiles.yml
+
+# Airflow / Astronomer
+airflow/.astro/
+airflow/logs/
+airflow/airflow_settings.yaml
+
+# Terraform
+infra/terraform/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# ML
+mlruns/
+mlartifacts/
+*.pkl
+*.joblib
+
+# Quarto
+reports/_site/
+reports/*_files/
+reports/.quarto/
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/

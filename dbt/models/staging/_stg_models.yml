@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: stg_food_inspections
+    description: One row per inspection-violation record, cleaned and typed.
+    columns:
+      - name: license_number
+        data_tests: [not_null]
+      - name: inspected_at
+        data_tests: [not_null]

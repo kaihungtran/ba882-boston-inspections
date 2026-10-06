@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  python-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - name: Lint Python
+        run: ruff check .
+
+  dbt-parse:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dbt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install dbt-bigquery
+      - name: Parse dbt project (no warehouse connection needed)
+        run: |
+          cp profiles.yml.example profiles.yml
+          dbt parse --profiles-dir .
+        env:
+          GCP_PROJECT_ID: ci-placeholder

@@ -1,0 +1,8 @@
+# Fill in GitHub usernames once roles are assigned (see TEAM.md).
+# The owner is auto-requested as a reviewer on PRs touching their folder.
+# /airflow/          @ingestion-owner
+# /dbt/              @warehouse-owner
+# /ml/               @ml-owner
+# /genai/            @genai-owner
+# /app/  /reports/   @bi-app-owner
+# /infra/ /.github/  @lead-devops-owner
