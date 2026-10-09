@@ -6,14 +6,14 @@ Our project outline lists 5 roles. With 6 people, we split the old "Project lead
 
 ## Role summary
 
-| # | Role | Owner | Backup | GitHub label |
+| # | Role | Owner | GitHub label |
 |---|---|---|---|---|
-| 1 | Project lead & DevOps | TBD | TBD | `area: infra`, `area: pm` |
-| 2 | Data ingestion | TBD | TBD | `area: ingestion` |
-| 3 | Data warehouse (dbt) | TBD | TBD | `area: warehouse` |
-| 4 | BI & app | TBD | TBD | `area: app-bi` |
-| 5 | Machine learning | Bruce | TBD | `area: ml` |
-| 6 | Generative AI | TBD | TBD | `area: genai` |
+| 1 | Project lead & DevOps | Fei; Bruce | `area: infra`, `area: pm` |
+| 2 | Data ingestion | Kai; Fei | `area: ingestion` |
+| 3 | Data warehouse (dbt) | Kai | `area: warehouse` |
+| 4 | BI & app | Jesse | `area: app-bi` |
+| 5 | Machine learning | Bruce; Yanlun | `area: ml` |
+| 6 | Generative AI |  Irene; Yanlun |`area: genai` |
 
 ## Responsibilities in detail
 
