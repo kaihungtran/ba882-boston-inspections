@@ -54,3 +54,4 @@ reports/.quarto/
 .DS_Store
 .vscode/
 .idea/
+dbt/.user.yml
