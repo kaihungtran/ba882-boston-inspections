@@ -12,7 +12,7 @@ Our project outline lists 5 roles. With 6 people, we split the old "Project lead
 | 2 | Data ingestion | TBD | TBD | `area: ingestion` |
 | 3 | Data warehouse (dbt) | TBD | TBD | `area: warehouse` |
 | 4 | BI & app | TBD | TBD | `area: app-bi` |
-| 5 | Machine learning | TBD | TBD | `area: ml` |
+| 5 | Machine learning | Bruce | TBD | `area: ml` |
 | 6 | Generative AI | TBD | TBD | `area: genai` |
 
 ## Responsibilities in detail
