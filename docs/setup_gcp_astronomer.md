@@ -108,6 +108,9 @@ Put the key in `airflow/include/`:
 mv ~/gcp-key.json ~/ba882-boston-inspections/airflow/include/gcp-key.json
 # Or, working on your laptop with a downloaded key:
 # mv ~/Downloads/gcp-key.json airflow/include/gcp-key.json
+
+# Let the Airflow container read it (gcloud saves keys as owner-only)
+chmod 644 ~/ba882-boston-inspections/airflow/include/gcp-key.json
 ```
 
 Create `airflow/.env` (gitignored; Astro loads it automatically):
@@ -148,6 +151,7 @@ Common errors:
 | Error | Fix |
 |---|---|
 | `DefaultCredentialsError` | `.env` path is wrong, or the key isn't in `airflow/include/` |
+| `PermissionError: [Errno 13] ... gcp-key.json` | Run `chmod 644 airflow/include/gcp-key.json` |
 | `403 ... storage.objects.create` | Service account missing `storage.objectAdmin` (step 3) |
 | `403 ... bigquery.jobs.create` | Missing `bigquery.jobUser` |
 | `404 Not found: Dataset PROJECT_ID:raw` | Step 2 not done, or dataset location mismatch |
