@@ -88,7 +88,7 @@ sort -u requirements.txt -o requirements.txt
 
 Commit the generated `Dockerfile`, `packages.txt`, `requirements.txt` and `.dockerignore` on a branch (`ingestion/6-astro-setup`) and open a PR.
 
-## 5. Find the CKAN resource ID (issue #4)
+## 5. Find the CKAN resource ID (issue #4) ✅ done: `4582bec6-2b4f-4f9e-bc55-cbaa73117f4c`
 
 1. Open https://data.boston.gov/dataset/food-establishment-inspections
 2. Click the data file → **Data API** button. The `resource_id` is in the example URL.
@@ -99,20 +99,38 @@ Commit the generated `Dockerfile`, `packages.txt`, `requirements.txt` and `.dock
 
 ## 6. Wire up credentials and config locally
 
+> ⚠️ **Never upload the key through the GitHub website** (Add file → Upload). That skips `.gitignore` and publishes the key. Only ever copy it straight into `airflow/include/`.
+
+Put the key in `airflow/include/`:
+
 ```bash
-mv ~/Downloads/gcp-key.json airflow/include/gcp-key.json
+# Key created in Cloud Shell (step 3):
+mv ~/gcp-key.json ~/ba882-boston-inspections/airflow/include/gcp-key.json
+# Or, working on your laptop with a downloaded key:
+# mv ~/Downloads/gcp-key.json airflow/include/gcp-key.json
 ```
 
 Create `airflow/.env` (gitignored; Astro loads it automatically):
 
 ```bash
+cd ~/ba882-boston-inspections/airflow
+cat > .env <<'ENV'
 GOOGLE_APPLICATION_CREDENTIALS=/usr/local/airflow/include/gcp-key.json
-GCP_PROJECT_ID=PROJECT_ID
-GCS_LANDING_BUCKET=BUCKET
-CKAN_INSPECTIONS_RESOURCE_ID=RESOURCE_ID
+GCP_PROJECT_ID=ba882-team10-inspections
+GCS_LANDING_BUCKET=ba882-team10-inspections-landing
+CKAN_INSPECTIONS_RESOURCE_ID=4582bec6-2b4f-4f9e-bc55-cbaa73117f4c
+ENV
 ```
 
-Double-check nothing secret is staged: `git status` should **not** list `gcp-key.json` or `.env`.
+Check:
+
+```bash
+ls include/      # gcp-key.json is there
+cat .env         # 4 lines, no placeholders
+git status       # gcp-key.json and .env must NOT be listed
+```
+
+**Teammates:** you don't need your own service account. Get the key from Kai privately (DM, never Slack channels or GitHub) and follow this step.
 
 ## 7. Run and test locally
 
