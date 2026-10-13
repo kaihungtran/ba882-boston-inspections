@@ -1,4 +1,4 @@
-requests
-google-cloud-storage
-google-cloud-bigquery
 apache-airflow-providers-google
+google-cloud-bigquery
+google-cloud-storage
+requests
