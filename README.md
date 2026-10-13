@@ -70,3 +70,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before your first pull request. In short
 3. Authenticate locally: `gcloud auth application-default login`
 4. Copy `.env.example` to `.env` and fill in values. **Never commit `.env` or service-account keys.**
 5. Follow the README inside the folder you're working in (`airflow/`, `dbt/`, ...).
+6. Setting up ingestion on GCP + Astronomer? Follow [docs/setup_gcp_astronomer.md](docs/setup_gcp_astronomer.md).
