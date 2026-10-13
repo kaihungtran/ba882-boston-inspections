@@ -1,19 +1,39 @@
 # Team Roles and Responsibilities
 
-> **Status: DRAFT, for team discussion.** Put your name next to the role you want (and a backup role), then we finalize at our next meeting. The syllabus requires that each member has an assigned role, and that we track the project on GitHub. Our teammates' assessment is 30% of the project grade, so ownership matters.
+> **Roles assigned 2026-10-13.** Each member has an owner role and, where possible, a backup. The syllabus requires an assigned role per member and that we track the project on GitHub. Teammates' assessment is 30% of the project grade, so visible ownership matters.
+>
+> **To finalize:** add each person's **GitHub username** in the table below so we can set `.github/CODEOWNERS` and auto-assign issues. ⚠️ See *Coverage notes* under the table — two roles have no backup and the load is uneven.
 
-Our project outline lists 5 roles. With 6 people, we split the old "Project lead and app" role into **Project lead & DevOps** and **BI & app**, since each is a full job.
+Our project outline listed 5 roles. With 6 people, we split the old "Project lead and app" role into **Project lead & DevOps** and **BI & app**, since each is a full job.
 
 ## Role summary
 
-| # | Role | Owner | GitHub label |
+| # | Role | Owner | Backup | GitHub label |
 |---|---|---|---|---|
-| 1 | Project lead & DevOps | Fei; Bruce | `area: infra`, `area: pm` |
-| 2 | Data ingestion | Kai; Fei | `area: ingestion` |
-| 3 | Data warehouse (dbt) | Kai | `area: warehouse` |
-| 4 | BI & app | Jesse | `area: app-bi` |
-| 5 | Machine learning | Bruce; Yanlun | `area: ml` |
-| 6 | Generative AI |  Irene; Yanlun |`area: genai` |
+| 1 | Project lead & DevOps | Fei | Bruce | `area: pm`, `area: infra` |
+| 2 | Data ingestion | Kai | Fei | `area: ingestion` |
+| 3 | Data warehouse (dbt) | Kai | *(open)* | `area: warehouse` |
+| 4 | BI & app | Jesse | *(open)* | `area: app-bi` |
+| 5 | Machine learning | Bruce | Yanlun | `area: ml` |
+| 6 | Generative AI | Irene | Yanlun | `area: genai` |
+
+## By person
+
+| Member | GitHub username | Owns | Backs up |
+|---|---|---|---|
+| Fei | `@` | Project lead & DevOps | Data ingestion |
+| Kai | `@` | Data ingestion, Data warehouse | — |
+| Bruce | `@` | Machine learning | Project lead & DevOps |
+| Jesse | `@` | BI & app | — |
+| Irene | `@` | Generative AI | — |
+| Yanlun | `@` | *(open — see notes)* | Machine learning, Generative AI |
+
+## Coverage notes (worth a quick look)
+
+- **Kai owns two roles** (ingestion + warehouse). They're closely related and both peak in Phase 1, so one person *can* carry both — but it's a lot. Consider making Yanlun co-owner or backup on **Data warehouse**.
+- **Yanlun has no primary role**, only backups. Giving Yanlun ownership of **Data warehouse** or **BI & app** balances the team and gives them something clearly theirs for the peer evaluation.
+- **Data warehouse** and **BI & app** have no backup. Every role should have a second person who can step in.
+- Suggested fix: **Yanlun → co-owns Data warehouse with Kai.** That closes the warehouse backup gap, frees Kai to focus on ingestion, and gives Yanlun a primary. Up to the team.
 
 ## Responsibilities in detail
 
