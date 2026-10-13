@@ -1,7 +1,7 @@
 """Daily ingestion of Boston food establishment inspections.
 
-Starter skeleton: confirm the CKAN resource ID and field names first
-(see the issue "Confirm inspection data recency and API access").
+Resource ID and field names confirmed 2026-10-13 (see docs/data_sources.md).
+~905k rows, so the first full load makes ~91 API requests.
 
 Flow: CKAN datastore API -> newline-delimited JSON in GCS -> BigQuery raw table.
 """
@@ -18,7 +18,7 @@ except ImportError:  # Airflow 2
     from airflow.decorators import dag, task
 
 CKAN_URL = "https://data.boston.gov/api/3/action/datastore_search"
-RESOURCE_ID = os.getenv("CKAN_INSPECTIONS_RESOURCE_ID", "TODO-confirm-resource-id")
+RESOURCE_ID = os.getenv("CKAN_INSPECTIONS_RESOURCE_ID", "4582bec6-2b4f-4f9e-bc55-cbaa73117f4c")
 BUCKET = os.getenv("GCS_LANDING_BUCKET", "TODO-bucket")
 PROJECT = os.getenv("GCP_PROJECT_ID", "TODO-project")
 RAW_TABLE = f"{PROJECT}.raw.food_inspections"
