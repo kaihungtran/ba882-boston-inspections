@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "ba882-team10-inspections",
+  "private_key_id": "4ca69b9f4bb2a7aaa1f4f6dc93ba7d54f286b891",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC+NJqGgIuaL+1y\nxWvmxk4xtLMFZXPsP+3kF392vaBTvUjLJxbY1bMj1piOYpqcTETrAiWHmwKvcojH\nsrLcdENU2bmlD4D6p4Sds98ifapBQgYzCdDvcCymTV7YlxoVKjZcfiUqmIEkXJiz\n7wth8m20rH0ffHdUN9zTV2eUjGG+RP2bYLoTduwu5MtcFQbru32DaTxY5ghokxn7\nb2nxwWMN9lsQXMiIJnii99OM91j/f5VUx39Ez6vdF/QCA0/Ls0lkviw1LbpOWKeZ\n7JYJML6A3QZ8JXhcL2nrlR2A0XtGRqr0CLP9Dg6es9BtNT2fs6/T39ovlBMqPXQp\nal7BSn4JAgMBAAECggEAPM+iq+gDOhuipfQaiGDUdS3ZopsKEflqfGdK2FLOJJe6\n40CvHEpOiOG+Sp+Z4Oi9jAlWqGFV3XQX6QjoCHWfZUxq/yvSx9CxJJ5yc5uLyGts\ngfrccwEBNXY9IbBFpYimcrHd/h1eBJsaM0T09a7FhmMzadKocCOgFW23bxXm1ia5\nF8lKL5aLSSO4EzaFCWDnPXi9ktQ+Yl6av3r5rKQo9U2nPPKkCbrleaw9nVAdZzKA\noQUZUMrtkCxN3kvtk71eTJ0zMVA5EbNSGn8dLCicqfXRZl4FpTW8+2m2zqmwJ+M5\nxeOpyLYHxIUDEZqe0Rah+w9hxkF/zTfjyJwtreWvZQKBgQDtb3VfrdEhKMsH0qKp\n2tOySeqPpop6Fg79kYU0jgnHP33r/S8vaBK22AWWCXjX1j7f5Hv4M3UdQ3Lr0HER\nDQclX/dB9fywkMcM+GfwBK0v7LiGP4wjbeGaieJEtlENIaHhWztYKHxLkQf5xEDN\ndaUcytHs0zD6F/aLNgUCz2/+4wKBgQDNE8jTbaQxrow0nRkSmYN9fX/b8sKP0VAP\nx4sdiGWrKJ5HMEhOdSmynHw/0OjaF0HPewzPNyDV8FTrU+sFdaKMmnnSrCH+RNb3\njLiEZzAJwHNjEg0k8ttEAtfaF/5GqQsnDLHyJ2JQdKuQAk68I2SJwOp8PZIGoD1X\n6CsQfI7XIwKBgQCyv2hDoZ2BMy62MvLWoLEi1dbKUnyJsLWUW8tGZ3AhGkF4OeEd\n9WGxWSvLalIZW2d2MpLJpiOS5kZMFV4pkf9BOd/xPnj/i97uesv0u/CN1c6M8qZT\nvdNL/mXjiMW39wvhlkc09TWtxf+VHxQSGXE2HdKwUcXbYdLvtrlLBlOwNQKBgEbF\n0iOtDeIbY8VwhcuWcPtoySxFvgFV8fRQH+FkRfnofZ8BuaJh6q76NCLt3L4PEqYg\nyA3m740FcLj57/ylWSB+2xXqU5zlcu5hgPgoiDqFUQzamPCsYyE4ffeFGjqWcgPa\n7Lot/07WxLJhKXziFfs4OXQA55kjyafBtsLsyXrTAoGBAIlAGeXzQy8IsUFsMvzT\na8H9UXFNahOee5iN+hQpxRkG2fhQdbdd1DRJUALsIXSOl0DArEXmrfKEMWLugGe5\n+lNRGS4dVf5oBbksZcjlwiG77HRjSQ/M5UPJph//mvq4sB4cb0IQ/rg+/dkpX2cd\ncNRB8C4qzYPaThCB8qx1xpoV\n-----END PRIVATE KEY-----\n",
+  "client_email": "airflow-sa@ba882-team10-inspections.iam.gserviceaccount.com",
+  "client_id": "105996205841727250570",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/airflow-sa%40ba882-team10-inspections.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
