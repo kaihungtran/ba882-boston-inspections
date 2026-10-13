@@ -8,9 +8,11 @@ Replace these placeholders everywhere:
 
 | Placeholder | Example |
 |---|---|
-| `PROJECT_ID` | `ba882-team10-inspections` |
-| `BUCKET` | `ba882-team10-landing` (must be globally unique) |
-| `REGION` | `us-east1` |
+| `PROJECT_ID` | `ba882-team10-inspections` (our project) |
+| `BUCKET` | `ba882-team10-inspections-landing` (our bucket) |
+| `REGION` | `US` |
+
+**Status (10/13):** project, `airflow-sa` service account, its 3 roles and the key are done (Kai).
 
 ---
 
@@ -43,7 +45,7 @@ Add teammates: Console → IAM → Grant access → their BU Google emails with 
 ## 2. Create the landing bucket and BigQuery datasets
 
 ```bash
-gcloud storage buckets create gs://BUCKET --location=REGION --uniform-bucket-level-access
+gcloud storage buckets create gs://BUCKET --location=US --uniform-bucket-level-access
 
 bq --location=US mk --dataset PROJECT_ID:raw
 bq --location=US mk --dataset PROJECT_ID:staging
@@ -57,12 +59,15 @@ bq --location=US mk --dataset PROJECT_ID:marts
 ```bash
 gcloud iam service-accounts create airflow-sa --display-name="Airflow (Astronomer)"
 
-SA=airflow-sa@PROJECT_ID.iam.gserviceaccount.com
+cd ~                                   # keep the key OUT of any git repo folder
+PROJECT=ba882-team10-inspections
+SA=airflow-sa@$PROJECT.iam.gserviceaccount.com
 for ROLE in roles/storage.objectAdmin roles/bigquery.dataEditor roles/bigquery.jobUser; do
-  gcloud projects add-iam-policy-binding PROJECT_ID --member="serviceAccount:$SA" --role="$ROLE"
+  gcloud projects add-iam-policy-binding $PROJECT \
+    --member="serviceAccount:$SA" --role="$ROLE" --condition=None --quiet
 done
 
-gcloud iam service-accounts keys create gcp-key.json --iam-account=$SA
+gcloud iam service-accounts keys create ~/gcp-key.json --iam-account=$SA
 ```
 
 Share `gcp-key.json` with the ingestion owner **privately** (DM, not Slack channel, never git). It is gitignored by the pattern `gcp-key*.json`.
@@ -71,8 +76,10 @@ Share `gcp-key.json` with the ingestion owner **privately** (DM, not Slack chann
 
 ## 4. Initialize the Astronomer project (once, then commit)
 
+> Run this **inside the repo's `airflow/` folder**, never in your home folder. `astro dev init` turns whatever folder you're in into an Astro project.
+
 ```bash
-cd airflow
+cd ~/ba882-boston-inspections/airflow
 cp requirements.txt requirements.keep    # astro init may overwrite it
 astro dev init                           # say yes if asked about a non-empty folder
 cat requirements.keep >> requirements.txt && rm requirements.keep
