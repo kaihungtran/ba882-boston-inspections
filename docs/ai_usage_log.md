@@ -5,3 +5,4 @@ The syllabus requires an appendix documenting the prompts and outputs that suppo
 | Date | Member | Tool & version | What we asked (prompt summary) | What it produced | How we verified / changed it |
 |---|---|---|---|---|---|
 | 2026-10-06 | Kai Tran | Claude (claude-opus-5-5) | Read the syllabus and project outline; propose 6 team roles, repo structure and an issue backlog | This repo scaffold, TEAM.md role draft, starter DAG and dbt files, seeded issues | Roles to be discussed and finalized by the team; starter code is placeholder and must be checked against the real API fields |
+| 2026-10-16 | Irene Tang | ChatGPT (GPT-6) | Help drafting SQL queries and reviewing inspection and 311 data for the GenAI part. | SQL and documentation drafts | Ran queries in BigQuery, checked the actual data and results, reviewed relevant fields for GenAI, and shared the initial data requirements with the team. |
