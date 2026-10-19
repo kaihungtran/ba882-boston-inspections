@@ -1,8 +1,8 @@
 # GenAI Phase 1 — Inspection Text and 311 Input Review
 
-Yihui (Irene) Tang · BA882 Team 10 · October 16, 2026
+Irene (Yihui) Tang · BA882 Team 10 · October 16, 2026
 
-I reviewed the raw inspection text to decide which fields GenAI will need for violation tagging and restaurant summaries. I also checked the category structure in both 311 datasets, since the GenAI role supports early 311 category research. This is an **input review**, not a dbt implementation, ML feature engineering, or a finished LLM model.
+Reviewed the raw inspection text to decide which fields GenAI will need for violation tagging and restaurant summaries. Also checked the category structure in both 311 datasets, since the GenAI role supports early 311 category research. This review focuses on the raw data fields and what we may need for the GenAI part later.
 
 **Sources:** `ba882-team10-inspections.raw.food_inspections`, `raw.requests_311_legacy`, and `raw.requests_311_new` in the team BigQuery project. Results reflect queries run on October 16, 2026. See [`sql/profile_raw_sources.sql`](sql/profile_raw_sources.sql). The inspection text examples came from a 20-row query result; 311 category counts came from the top-40 query results. The raw tables may change after refreshes.
 
@@ -23,15 +23,15 @@ The 20-row exploratory sample included 17 different descriptions. Nine rows were
 
 ### Fields needed for GenAI
 
-| Raw fields | Why GenAI needs them | Requested clean input (dbt owner) |
+| Raw fields | Why GenAI needs them | Data preparation considerations |
 |---|---|---|
-| `_id`, `licenseno`, `property_id` | Trace source records and group a restaurant's history after the establishment link is validated. | Preserve raw IDs; provide a tested establishment key. Do not assume `property_id` or a row ID uniquely identifies a restaurant or inspection visit. |
-| `resultdttm`, `violdttm` | Order past inspections and label the timing of observations. | Parse the original strings into typed dates/timestamps, retaining raw values when useful. |
-| `violation`, `violdesc` | Map violation codes and descriptions to themes. | Keep both original fields; check code-to-description mapping and blank values. |
-| `comments` | Support factual summaries and retain evidence of corrective actions. | Preserve the original text, including corrections reported as already completed. |
-| `result`, `viol_level`, `viol_status` | Provide context for an issue and distinguish recorded outcomes/status. | Keep original values and document their meanings; do not infer inspection failure from the mere presence of a violation. |
+| `_id`, `licenseno`, `property_id` | Trace source records and group a restaurant's history after the establishment link is validated. | The original IDs may be useful, but a reliable establishment key still needs to be validated. |
+| `resultdttm`, `violdttm` | Order past inspections and label the timing of observations. | These fields are stored as strings, so converting them to date/time formats could be helpful. |
+| `violation`, `violdesc` | Map violation codes and descriptions to themes. | Both original fields would be useful. Their relationship and missing values still need to be checked. |
+| `comments` | Support factual summaries and retain evidence of corrective actions. | Original comments would be useful, especially when they mention corrections already completed on site. |
+| `result`, `viol_level`, `viol_status` | Provide context for an issue and distinguish recorded outcomes/status. | These fields provide context, but a violation row does not necessarily mean the inspection failed. |
 
-**Initial theme directions:** temperature control (*Hot Holding*, *Cold Holding*), pests (*Rodent Activity* in 311; *Insects Rodents Animals* in inspections), cleanliness (*Food Contact Surfaces Clean*), facilities (*Improper Maintenance of Floors*), and personnel hygiene (*Hand Cleaner / Drying Tissue*). These are **examples for a draft taxonomy**, not approved labels or a finished mapping of all 454 descriptions. Inspection themes and 311 complaint themes are different concepts.
+**Possible themes**: Based on the inspection descriptions and 311 categories, temperature control, pests, cleanliness, facilities, and personal hygiene could be useful themes for later tagging. For example, `Hot Holding` is related to temperature control, while `Rodent Activity` appears in the Legacy 311 data. These are just initial ideas, and the full mapping of violation descriptions has not been tested yet.
 
 ## 2. 311 Legacy vs New: category input for the team
 
@@ -52,12 +52,12 @@ The **top 40 category pairs** covered 190,914 of 199,594 Legacy rows (95.65%) an
 | `Illegal Dumping` | 1,785 | `Illegal Dumping or Disposal` | 3,558 | Similar environmental topics; proposed mapping. |
 | — | — | `Overflowing Trash` | 2,333 | Possible nearby sanitation context, not a restaurant-specific violation. |
 
-**Recommendation:** Keep the original 311 source categories and create a separate, reviewed complaint-theme mapping if the team uses 311 in downstream analysis. Do not combine unrelated requests, treat a 311 complaint as evidence against a restaurant, or assume that Old/New category names are equivalent. The complete mapping and any spatial/time joins are **not implemented here**.
+**Recommendation:** Keeping the original 311 category fields would make it easier to create a consistent mapping later. Similar category names should not automatically be treated as equivalent, and nearby complaints do not necessarily indicate violations at a restaurant.
 
-## 3. Handoff and next GenAI step
+## 3. Takeaways and next steps
 
-- **For Kai / dbt:** Please retain and type the inspection fields above, document inspection-event vs violation-row grain, and provide a stable establishment link and historical inspection records. For 311, preserve the source category fields so an agreed mapping can be applied without losing their original meaning. The warehouse cleaning, joins, deduplication, and spatial models remain with dbt/ingestion owners.
-- **For later GenAI work:** Start with a reviewed mapping of the 454 distinct nonblank violation descriptions, then test/version tagging prompts and assess results using hand-labeled examples. Use the verified historical inspection records to produce grounded summaries. The model, evaluation, scheduled jobs, and BigQuery outputs have **not** been built in Phase 1.
-- **For ML:** Any historical theme tags can be handed to Bruce for feature testing. This review does **not** construct ML predictors, train a model, choose spatial radii, or claim predictive improvement. Features must respect the prediction cutoff date.
+- **Data preparation:** The inspection text, IDs, and date fields would be useful for future GenAI work. The difference between violation rows and inspection events still needs to be considered, and the establishment-level link has not been fully validated. For 311, keeping the original category fields would also make later comparisons and mapping easier.
+- **Next GenAI steps:** The 454 distinct violation descriptions could be a starting point for theme mapping. The next step would be to test the tagging approach using real descriptions and evaluate the results with hand-labeled examples. Restaurant summaries would also need reliable historical inspection records.
+- **Possible ML use:** The GenAI theme tags could potentially be used as ML features later, depending on the model requirements. Any features would need to use only information available before the prediction date.
 
-**Scope note:** Food-license deduplication, cross-table key testing, ML modeling, and optional RAG are outside this deliverable. The broader team plan also mentions neighborhood/ACS source research, but no ACS/neighborhood raw-data findings are claimed in this review; any remaining responsibility should be confirmed with the project lead.
+**Scope:** This review focuses on inspection text and the category structure of the two 311 datasets. It does not cover food-license deduplication, cross-table matching, or ACS/neighborhood analysis.
