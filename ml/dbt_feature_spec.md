@@ -24,6 +24,8 @@ The notebook's pandas version of this table is `data/features_v0.parquet`. The d
 
 ## 2. Staging fixes (`stg_*`)
 
+> The full list of kept columns and the per-column cleaning for every raw table is in [docs/staging_columns.md](../docs/staging_columns.md). This section explains the ML reasons behind it.
+
 ### `stg_food_inspections` (grain: one row per violation)
 
 `main` already confirms the column names and drops rows with a null `resultdttm`. That model is still missing the following:
@@ -69,14 +71,15 @@ Boston is moving 311 to a new vendor one department at a time. The [transition g
 
   | Column | Legacy field | New-system field |
   |---|---|---|
-  | `case_id` | `case_enquiry_id` | Case ID |
-  | `opened_at` | `open_dt` (mixed formats, same parsing approach) | Open Date |
-  | `case_category` | `type` | Case Topic, falling back to Service Name |
+  | `case_id` | `case_enquiry_id` | `case_id` |
+  | `opened_at` | `open_dt` (mixed formats, same parsing approach) | `open_date` |
+  | `case_category` | `type` | `coalesce(case_topic, service_name)` |
+  | original categories | `type`, `reason`, `subject` (kept for GenAI) | `case_topic`, `service_name` (kept for GenAI) |
   | `department` | `department` | Assigned Department |
-  | `latitude`, `longitude` | `latitude`, `longitude` | Latitude (Y), Longitude (X) |
+  | `latitude`, `longitude` | `latitude`, `longitude` | `latitude`, `longitude` |
   | `source_system` | `'legacy'` | `'new'` |
 
-  The guide gives this field mapping. Check the exact column names in the raw new-feed files. `type` has **no direct equivalent** in the new system, so `case_category` won't line up value for value across the two systems.
+  The new-feed names `case_id`, `open_date`, `case_topic`, `service_name`, `latitude` and `longitude` were confirmed in BigQuery by the GenAI review. Department and the other fields still need checking. `type` has **no direct equivalent** in the new system, so `case_category` won't line up value for value across the two systems.
 - **`is_food_safety` from a seed, not a regex.** Add a seed `seeds/food_safety_311_categories.csv` with the columns `source_system`, `case_category` and `is_food_safety`.
   - **Legacy rows:** start from what the notebook's regex matched (§10): Rodent Activity, Pest Infestation - Residential, Unsanitary Conditions (Establishment / Food / Employees), Food Alert (Confirmed / Unconfirmed), Overflowing or Un-kept Dumpster, and others.
   - **New-system rows:** fill these in from the new feed's data dictionary (linked from the guide) once Inspectional Services moves over.

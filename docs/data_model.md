@@ -3,6 +3,7 @@
 How our BigQuery tables connect, from raw sources to the marts used by the dashboard, ML and the app.
 Raw column names and match rates come from the 2026-10-13 landing snapshot
 (`ml/notebooks/01_eda_target_baseline.ipynb`). Mart columns are a proposal for the dbt layer.
+The columns staging keeps from each raw table, and the cleaning each needs, are in [staging_columns.md](staging_columns.md).
 
 The one shared key is `license_number` (`licenseno` in raw). Inspections and violations carry it directly.
 Licenses, 311, neighborhoods and Census data don't, so they are linked by name matching or by location.
@@ -20,7 +21,7 @@ Licenses, 311, neighborhoods and Census data don't, so they are linked by name m
 | seed `food_safety_311_categories` | | | |
 | | | | `ml_features` |
 | | | | `ml_risk_scores` (Phase 2) |
-| | | | `violation_tags` (Phase 3) |
+| | | | `violation_theme_map` (Phase 3) |
 
 ## Marts
 
@@ -34,7 +35,7 @@ erDiagram
   dim_neighborhood ||--o{ stg_311_requests : "tract_geoid"
   fct_inspections ||--|| ml_features : "inspection_id"
   dim_establishment ||--o{ ml_risk_scores : "license_number"
-  fct_violations ||--o{ violation_tags : "violation_id"
+  violation_theme_map ||--o{ fct_violations : "violation_code + violation_description"
 
   dim_neighborhood {
     string tract_geoid PK
@@ -81,6 +82,10 @@ erDiagram
     string source_system
     timestamp opened_at
     string case_category
+    string type
+    string reason
+    string case_topic
+    string service_name
     string department
     bool is_food_safety
     geography point
@@ -104,9 +109,10 @@ erDiagram
     date scored_at
     float risk_score
   }
-  violation_tags {
-    string violation_id FK
-    string tag
+  violation_theme_map {
+    string violation_code PK
+    string violation_description PK
+    string theme
   }
 ```
 
@@ -129,12 +135,15 @@ erDiagram
 | establishment → tract | `ST_CONTAINS(tract.geom, ST_GEOGPOINT(lon, lat))` | 13% of establishments have no coordinates |
 | tract → Census ACS | 11-char tract GEOID, `concat(state, county, tract)`, e.g. `25025010300` | Exact |
 | 311 → inspection | `ST_DWITHIN(r.point, e.point, 250)` and opened in the 90 days before the inspection | Spatial + time |
-| legacy 311 ↔ new 311 | Union on shared columns. Legacy `type` has no direct equivalent in the new system (it's approximated by Case Topic / Service Name), so `is_food_safety` comes from a seed keyed on `source_system` + `case_category`. Dedupe on `case_id` | Approximate across systems |
+| legacy 311 ↔ new 311 | Union on shared columns. Legacy `type` has no direct equivalent in the new system (it's approximated by `case_topic` / `service_name`), so `is_food_safety` comes from a seed keyed on `source_system` + `case_category`. Dedupe on `case_id` | Approximate across systems |
 
 ### Notes
 
 - **Inspections.** Drop the admin result codes (`HE_NotReq`, `HE_OutBus`, `DATAERR`, `HE_Misc`, `HE_Hold`, `Closed`)
-  before grouping. Don't use raw `_id` as a key: the DAG loads with `WRITE_TRUNCATE`, so `_id` can change between loads.
+  before grouping. Keep raw `_id` as `source_row_id` for tracing GenAI output back to source rows, but don't treat it as a durable
+  key: it's the city's row id, and the city could renumber it if it rebuilds the dataset. GenAI theme tags are keyed on
+  `violation_code` + `violation_description` (454 distinct descriptions), not on rows, so they survive a renumbering
+  and each description only gets tagged once.
 - **Licenses.** Build the match in `int_license_crosswalk` and put manual fixes for misses in
   `seeds/license_overrides.csv`. `property_id` is in both feeds (17% null in inspections) and is worth testing as a
   tie-breaker for multi-tenant addresses. Use the crosswalk only for `is_active_license` (the weekly scoring
@@ -151,11 +160,12 @@ erDiagram
 
   | Column | Legacy field | New-system field |
   |---|---|---|
-  | `case_id` | `case_enquiry_id` | Case ID |
-  | `opened_at` | `open_dt` | Open Date |
-  | `case_category` | `type` | Case Topic, falling back to Service Name |
+  | `case_id` | `case_enquiry_id` | `case_id` |
+  | `opened_at` | `open_dt` | `open_date` |
+  | `case_category` | `type` | `coalesce(case_topic, service_name)` |
+  | original categories | `type`, `reason`, `subject` (kept as is) | `case_topic`, `service_name` (kept as is) |
   | `department` | `department` | Assigned Department |
-  | `point` | `latitude`, `longitude` | Latitude (Y), Longitude (X) |
+  | `point` | `latitude`, `longitude` | `latitude`, `longitude` |
   | `source_system` | `'legacy'` | `'new'` |
 
   `is_food_safety` comes from `seeds/food_safety_311_categories.csv`, which replaces the old regex. The legacy rows
