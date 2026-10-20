@@ -21,6 +21,21 @@ For each raw table, this lists the columns that staging keeps and the cleaning e
 | Match | License matching |
 | Trace | Lineage only |
 
+## Build steps (raw → staging → intermediate)
+
+| # | Step | Owner | Detail |
+|---|---|---|---|
+| 0 | Branch from current `main` | Warehouse | Picks up `raw_api_ingest.py` and the updated `stg_food_inspections.sql` |
+| 1 | Declare all sources in `_sources.yml` | Warehouse | `food_inspections`, `food_licenses`, `requests_311_legacy`, `requests_311_new` and `neighborhoods`. These replace the placeholder `requests_311`. Freshness field: `_loaded_at` for inspections, `_load_date` for the others |
+| 2 | Load neighborhoods into BigQuery | Ingestion | It's only a GeoJSON file in GCS today. Write it out as one feature per line, then `bq load --json_extension=GEOJSON` into `raw.neighborhoods` |
+| 3 | Confirm the remaining column names | Warehouse | `select * limit 5` on both 311 tables and on neighborhoods. Fill in the "to confirm" rows below |
+| 4 | Shared macros | Warehouse | `safe_ts(x)` for the mixed timestamps, and a latest-partition / dedupe pattern for the snapshot and incremental tables |
+| 5 | Staging models | Warehouse | One per section below, then the `stg_311_requests` union |
+| 6 | Seed `food_safety_311_categories.csv` | ML + GenAI | Legacy rows from the notebook's list. New-system rows get added at the Inspectional Services cutover |
+| 7 | Tests and build | Warehouse | Run `dbt build --select staging`. Check row counts against the 2026-10-13 snapshot: about 874k inspection rows after filters, about 10.7k licenses in the inspections feed, 3,355 rows in the licenses feed |
+| 8 | Intermediate models | Warehouse + ML | `int_inspections` → `int_inspection_history`, `int_license_crosswalk`, `int_establishment_geo`, `int_311_geo`. Definitions and SQL sketches are in [ml/dbt_feature_spec.md §3–4](../ml/dbt_feature_spec.md) |
+| 9 | Marts | Warehouse + ML | `fct_*` / `dim_*` per [data_model.md](data_model.md), then `ml_features` and `ml_scoring_features` per the spec, §5 |
+
 ## Rules for every staging model
 
 - **Every raw column arrives as text.** Cast explicitly with `safe_cast`. Never rely on autodetect.
