@@ -44,7 +44,7 @@ BigQuery  raw  →  staging  →  intermediate  →  marts      (dbt)
 | [Active Food Establishment Licenses](https://data.boston.gov/dataset/active-food-establishment-licenses) | Daily | Master list of establishments and license types |
 | [Neighborhood boundaries](https://data.boston.gov/dataset/boston-neighborhood-boundaries-approximated-by-2020-census-tracts) and [Census ACS](https://www.census.gov/data/developers/data-sets/acs-5year.html) | Static / annual | Neighborhood context |
 
-More detail in [docs/data_sources.md](docs/data_sources.md).
+More detail in [docs/data_sources.md](docs/data_sources.md). For how the tables join, see [docs/data_model.md](docs/data_model.md).
 
 ## Repository layout
 
