@@ -13,9 +13,11 @@ Licenses, 311, neighborhoods and Census data don't, so they are linked by name m
 |---|---|---|---|
 | `food_inspections` | `stg_food_inspections` | `int_inspections` | `dim_establishment` |
 | `food_licenses` | `stg_food_licenses` | `int_license_crosswalk` | `dim_neighborhood` |
-| `requests_311_legacy` | `stg_311_requests` | `int_establishment_geo` | `fct_inspections` |
-| `neighborhoods` | `stg_neighborhood_tracts` | `int_311_geo` | `fct_violations` |
-| `acs_tract` (not ingested) | `stg_acs_tract` | | `fct_311_nearby` |
+| `requests_311_legacy` | `stg_311_requests` (union of both 311 feeds) | `int_establishment_geo` | `fct_inspections` |
+| `requests_311_new` | ↑ | `int_311_geo` | `fct_violations` |
+| `neighborhoods` | `stg_neighborhood_tracts` | | `fct_311_nearby` |
+| `acs_tract` (not ingested) | `stg_acs_tract` | | |
+| seed `food_safety_311_categories` | | | |
 | | | | `ml_features` |
 | | | | `ml_risk_scores` (Phase 2) |
 | | | | `violation_tags` (Phase 3) |
@@ -76,9 +78,11 @@ erDiagram
   }
   stg_311_requests {
     string case_id PK
+    string source_system
     timestamp opened_at
-    string type
-    string reason
+    string case_category
+    string department
+    bool is_food_safety
     geography point
     string tract_geoid FK
   }
@@ -125,6 +129,7 @@ erDiagram
 | establishment → tract | `ST_CONTAINS(tract.geom, ST_GEOGPOINT(lon, lat))` | 13% of establishments have no coordinates |
 | tract → Census ACS | 11-char tract GEOID, `concat(state, county, tract)`, e.g. `25025010300` | Exact |
 | 311 → inspection | `ST_DWITHIN(r.point, e.point, 250)` and opened in the 90 days before the inspection | Spatial + time |
+| legacy 311 ↔ new 311 | Union on shared columns. Legacy `type` has no direct equivalent in the new system (it's approximated by Case Topic / Service Name), so `is_food_safety` comes from a seed keyed on `source_system` + `case_category`. Dedupe on `case_id` | Approximate across systems |
 
 ### Notes
 
@@ -137,14 +142,34 @@ erDiagram
   the target.
 - **Neighborhoods.** The boundaries file is approximated by 2020 census tracts, so the tract is the key. Where
   coordinates are missing, fall back to the cleaned `city` field (upper-cased, trailing `/` stripped).
-- **311.** Use the legacy feed; the new system has no food-safety types. Filter `type` on
-  `rodent|rat|pest|unsanitary|food|restaurant|dumpster|odor`. The current snapshot only covers Jan–Oct 2026, so the
-  join is only useful after 311 history is backfilled.
+- **311.** Boston is moving 311 to a new vendor one department at a time
+  ([transition guide](https://docs.google.com/document/d/e/2PACX-1vQ9ExKIGyrLJeyVUO92qNw0Cbj5m6Sz2IAATdBgYiAGW69Wuv7dk10PHUPR7UdawGt_e89q9VhxH-I0/pub)).
+  Today every food-safety type (Rodent Activity, Unsanitary Conditions, Food Alert) is in the legacy feed, and the
+  new feed has none. **Inspectional Services is scheduled to cut over in Fall 2026.** We assume, though the guide
+  doesn't say, that it handles these cases. After the cutover, new food-safety cases would land only in the new feed.
+  So `stg_311_requests` unions both feeds:
+
+  | Column | Legacy field | New-system field |
+  |---|---|---|
+  | `case_id` | `case_enquiry_id` | Case ID |
+  | `opened_at` | `open_dt` | Open Date |
+  | `case_category` | `type` | Case Topic, falling back to Service Name |
+  | `department` | `department` | Assigned Department |
+  | `point` | `latitude`, `longitude` | Latitude (Y), Longitude (X) |
+  | `source_system` | `'legacy'` | `'new'` |
+
+  `is_food_safety` comes from `seeds/food_safety_311_categories.csv`, which replaces the old regex. The legacy rows
+  start from the notebook's matches. The new-system rows get filled in from the new data dictionary at the cutover.
+  Add a test that warns if daily food-safety volume drops by more than 50% against the trailing 4 weeks.
+
+  The current snapshot only covers Jan–Oct 2026, so the join is only useful after legacy 311 history is backfilled.
 
 ## Open items
 
-- [ ] `dbt/models/staging/_sources.yml` lists `requests_311`, but the landed folder is `requests_311_legacy`. Pick one
-      name and add `neighborhoods`.
+- [ ] `dbt/models/staging/_sources.yml` lists `requests_311`, but the landed folders are `requests_311_legacy` and
+      `requests_311_new`. Declare both, and add `neighborhoods`.
+- [ ] Watch for the Inspectional Services cutover (Fall 2026). When it happens, fill in the new-system rows of
+      `food_safety_311_categories`, and check whether the legacy feed keeps updating.
 - [ ] Set `loaded_at_field: _loaded_at` for raw inspections (licenses use `_load_date`).
 - [ ] Add dbt tests: `unique` + `not_null` on each PK, `relationships` on each FK, and a warning if the license
       match rate drops below 85%.
