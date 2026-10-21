@@ -53,6 +53,9 @@ class Source:
 
 
 SOURCES = [
+    # Food inspections licence 
+    Source("food_inspections", "incremental", date_column="resultdttm",
+       resource_id="4582bec6-2b4f-4f9e-bc55-cbaa73117f4c"),
     # 311, old system: one file per year; rodent and food-establishment complaints are here.
     Source("requests_311_legacy", "incremental", date_column="open_dt",
            resource_name="311 Service Requests - {year}"),
