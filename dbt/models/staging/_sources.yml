@@ -9,9 +9,8 @@ sources:
         error_after: {count: 4, period: day}
     tables:
       - name: food_inspections
-        description: Raw inspection results and violations from data.boston.gov
-        # TODO: set loaded_at_field once the ingestion DAG adds a load timestamp
+        description: Raw inspection results and violations from data.boston.gov (raw_api_ingest). Partitioned by _load_date; contains repeated copies across loads, deduped in staging.
       - name: food_licenses
-        description: Active food establishment licenses
+        description: Active food establishment licenses (raw_api_ingest). Full snapshot per _load_date.
       - name: requests_311
         description: 311 service requests (filtered to sanitation / rodent types)

@@ -1,6 +1,6 @@
 """Daily raw ingestion: Analyze Boston API -> Cloud Storage -> BigQuery (raw).
 
-Same layout as boston_raw_ingest, for the datasets other than food inspections.
+All Analyze Boston API sources for the project.
 One extract -> load pair per source. Each API page (10,000 rows) becomes one file:
 
   gs://<bucket>/raw/<source>/load_date=YYYY-MM-DD/part-00000.json, part-00001.json, ...   (NDJSON)
@@ -8,9 +8,8 @@ One extract -> load pair per source. Each API page (10,000 rows) becomes one fil
 then all parts load into BigQuery raw.<source>, partitioned by _load_date.
 Each run replaces that day's files and partition, so reruns are safe.
 
-Output tables: raw.requests_311_legacy, raw.requests_311_new, raw.food_licenses
-Neighborhood boundaries are a GeoJSON file, not an API table: saved to
-gs://<bucket>/raw/neighborhoods/load_date=YYYY-MM-DD/neighborhoods.geojson only.
+Output tables: raw.food_inspections, raw.requests_311_legacy, raw.requests_311_new, raw.food_licenses
+Neighborhood boundaries and Census ACS are static, so they live in dbt seeds instead.
 
 The first run of an incremental source (table missing) or a manual run with
 full_refresh=true pulls the entire history.
@@ -53,6 +52,9 @@ class Source:
 
 
 SOURCES = [
+    # Food Establishment Inspections: ~905k rows; first run pulls all, then the last 30 days daily.
+    Source("food_inspections", "incremental", date_column="resultdttm",
+           resource_id="4582bec6-2b4f-4f9e-bc55-cbaa73117f4c"),
     # 311, old system: one file per year; rodent and food-establishment complaints are here.
     Source("requests_311_legacy", "incremental", date_column="open_dt",
            resource_name="311 Service Requests - {year}"),
@@ -62,7 +64,6 @@ SOURCES = [
     # Active Food Establishment Licenses: small, statuses change, so pull it all each day.
     Source("food_licenses", "full", resource_id="f1e13724-284d-478c-b8bc-ef042aa5b70b"),
 ]
-NEIGHBORHOODS_RESOURCE_ID = "e5849875-a6f6-4c9c-9d8a-5048b0fbd03e"
 
 
 # ---------- Analyze Boston API ----------
@@ -258,26 +259,6 @@ def raw_api_ingest():
             return job.output_rows
 
         load(extract())
-
-    @task(task_id="extract_neighborhoods_to_gcs")
-    def extract_neighborhoods() -> str:
-        ctx = get_current_context()
-        load_date = _load_date()
-        bucket = _bucket()
-        folder = f"{GCS_PREFIX}/neighborhoods/"
-        if not ctx["params"].get("full_refresh") and next(iter(bucket.list_blobs(prefix=folder, max_results=1)), None):
-            print("neighborhoods: static file already in Cloud Storage, skipping")
-            return ""
-        url = _ckan("resource_show", id=NEIGHBORHOODS_RESOURCE_ID)["url"]
-        r = requests.get(url, timeout=TIMEOUT)
-        r.raise_for_status()
-        blob = bucket.blob(f"{folder}load_date={load_date}/neighborhoods.geojson")
-        blob.upload_from_string(r.content, content_type="application/geo+json", timeout=TIMEOUT)
-        uri = f"gs://{BUCKET}/{blob.name}"
-        print(f"neighborhoods: {len(r.content)} bytes -> {uri}")
-        return uri
-
-    extract_neighborhoods()
 
 
 raw_api_ingest()

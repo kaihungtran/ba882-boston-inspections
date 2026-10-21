@@ -6,3 +6,10 @@ logs/
 .venv
 airflow.db
 airflow.cfg
+
+# Never ship credentials in the image; Astro gets GCP access from the
+# google_cloud_default connection instead.
+include/gcp-key.json
+*.json.key
+*service-account*.json
+gcp-key*.json
