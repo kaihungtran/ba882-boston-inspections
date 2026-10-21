@@ -2,15 +2,21 @@ version: 2
 
 sources:
   - name: raw
+    description: Raw tables loaded daily by the raw_api_ingest Airflow DAG. Every column is text, plus _load_date.
     schema: raw
     config:
+      loaded_at_field: "cast(_load_date as timestamp)"
       freshness:
         warn_after: {count: 2, period: day}
         error_after: {count: 4, period: day}
     tables:
       - name: food_inspections
-        description: Raw inspection results and violations from data.boston.gov (raw_api_ingest). Partitioned by _load_date; contains repeated copies across loads, deduped in staging.
+        description: >
+          Inspection results and violations from data.boston.gov. Incremental with a 30-day lookback,
+          partitioned by _load_date, so recent records repeat across partitions (deduped in staging).
       - name: food_licenses
-        description: Active food establishment licenses (raw_api_ingest). Full snapshot per _load_date.
-      - name: requests_311
-        description: 311 service requests (filtered to sanitation / rodent types)
+        description: Active food establishment licenses. A full snapshot per _load_date.
+      - name: requests_311_legacy
+        description: 311 requests from the old system (yearly files). Incremental, 30-day lookback on open_dt.
+      - name: requests_311_new
+        description: 311 requests from the new system (since Aug 2025). Incremental, 30-day lookback on open_date.

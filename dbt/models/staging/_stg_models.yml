@@ -1,10 +1,106 @@
 version: 2
 
+# Column-level spec and reasoning: docs/staging_columns.md and ml/dbt_feature_spec.md.
+# Data-quality checks on drifting source values are warnings; structural checks are errors.
+
 models:
   - name: stg_food_inspections
-    description: One row per inspection-violation record, cleaned and typed.
+    description: >
+      One row per violation (an inspection with no violations keeps one row). Newest copy of each
+      record across daily loads; admin records, undated rows and blank license numbers removed.
     columns:
+      - name: source_row_id
+        description: The city's _id. For tracing back to source only; not a durable key.
       - name: license_number
         data_tests: [not_null]
       - name: inspected_at
         data_tests: [not_null]
+      - name: license_status
+        description: Today's value. Scoring population only, never a model feature.
+      - name: license_issued_at
+        description: Never a model feature.
+      - name: license_expires_at
+        description: Never a model feature.
+      - name: license_category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['FS', 'FT', 'RF', 'MFW']
+              config:
+                severity: warn
+      - name: violation_level
+        description: "*, ** or ***. NULL means no violation on this row, not missing data."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['*', '**', '***']
+      - name: violation_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Pass', 'Fail']
+              config:
+                severity: warn
+      - name: inspector_comments
+        description: Original text, trimmed only. GenAI needs the original wording.
+
+  - name: stg_food_licenses
+    description: One row per active license in the latest daily snapshot. No license number in this feed.
+    columns:
+      - name: business_name
+        data_tests: [not_null]
+      - name: name_key
+        description: Upper-cased business name with everything except A-Z and 0-9 removed. For matching.
+      - name: addr_key
+        description: First two tokens of the upper-cased address. For matching.
+      - name: license_added_at
+        description: Only exists for licenses still active today. Never a model feature.
+
+  - name: stg_311_requests_legacy
+    description: One row per case from the old 311 system (newest copy across daily loads).
+    columns:
+      - name: case_id
+        data_tests: [unique, not_null]
+      - name: opened_at
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: type
+        description: Original category, kept for GenAI. Copied to case_category for the seed lookup.
+
+  - name: stg_311_requests_new
+    description: One row per case from the new 311 system (newest copy across daily loads).
+    columns:
+      - name: case_id
+        data_tests: [unique, not_null]
+      - name: case_category
+        description: coalesce(case_topic, service_name). Seed lookup key.
+
+  - name: stg_311_requests
+    description: >
+      Legacy and new 311 cases unioned, with is_food_safety and food_safety_theme from
+      seeds/food_safety_311_categories.csv. IDs don't overlap between systems.
+    columns:
+      - name: case_id
+        data_tests: [unique, not_null]
+      - name: source_system
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['legacy', 'new']
+      - name: is_food_safety
+        data_tests: [not_null]
+
+  - name: stg_neighborhoods
+    description: One row per Boston neighborhood (26) with its boundary. Neighborhood-level, not census tracts.
+    columns:
+      - name: neighborhood_id
+        data_tests: [unique, not_null]
+      - name: neighborhood
+        data_tests: [unique, not_null]
+      - name: geom
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
