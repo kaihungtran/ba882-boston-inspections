@@ -3,6 +3,7 @@
 Run once (and again only if the city changes the boundaries), then commit the CSV:
 
     python3 scripts/build_neighborhood_seed.py
+    python3 scripts/build_neighborhood_seed.py /tmp/neighborhoods.geojson   # use an already-downloaded file
 
 Source: data.boston.gov resource e5849875-a6f6-4c9c-9d8a-5048b0fbd03e (26 neighborhoods,
 WGS84 lon/lat). Each shape is stored as a GeoJSON string; stg_neighborhoods turns it into a
@@ -25,7 +26,9 @@ MAX_FIELD = 120_000  # stay under Python's default CSV field limit (131,072)
 
 
 def fetch_json(url):
-    with urllib.request.urlopen(url, timeout=120) as r:
+    # The download redirects to ArcGIS, which rejects Python's default User-Agent (HTTP 403).
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (ba882-team10 seed builder)"})
+    with urllib.request.urlopen(req, timeout=120) as r:
         return json.load(r)
 
 
@@ -55,9 +58,13 @@ def clean_geometry(geom, decimals):
 
 
 def main():
-    url = fetch_json(CKAN + RESOURCE_ID)["result"]["url"]
-    print(f"Downloading {url}")
-    features = fetch_json(url)["features"]
+    if len(sys.argv) > 1:
+        print(f"Reading {sys.argv[1]}")
+        features = json.loads(Path(sys.argv[1]).read_text())["features"]
+    else:
+        url = fetch_json(CKAN + RESOURCE_ID)["result"]["url"]
+        print(f"Downloading {url}")
+        features = fetch_json(url)["features"]
 
     rows = []
     for f in features:
