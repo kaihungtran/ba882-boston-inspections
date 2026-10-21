@@ -1,7 +1,24 @@
--- One row per establishment x inspection x violation. Column names confirmed 2026-10-13.
+-- One row per establishment x inspection x violation.
+-- Source: raw.food_inspections, loaded by the raw_api_ingest DAG. All columns arrive as text,
+-- plus _load_date. Each daily load re-pulls the last 30 days, so the same record sits in many
+-- _load_date partitions: keep only the copy from the most recent load.
 -- Rows with no inspection date (e.g. result = 'HE_NotReq') are dropped.
+--
+-- Dedup key assumption: licenseno + resultdttm + violation + violdesc + violdttm + comments
+-- identifies one record. Refine if we find two genuinely different rows sharing it.
+
 with source as (
     select * from {{ source('raw', 'food_inspections') }}
+),
+
+deduped as (
+    select *
+    from source
+    where resultdttm is not null
+    qualify row_number() over (
+        partition by licenseno, resultdttm, violation, violdesc, violdttm, comments
+        order by _load_date desc, safe_cast(_id as int64) desc
+    ) = 1
 )
 
 select
@@ -22,6 +39,6 @@ select
     trim(address)                             as address,
     trim(city)                                as city,
     zip,
-    location
-from source
-where resultdttm is not null
+    location,
+    _load_date                                as loaded_on
+from deduped
