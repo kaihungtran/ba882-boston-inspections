@@ -15,12 +15,12 @@ astro dev start             # local Airflow at http://localhost:8080
 Commit the generated `Dockerfile`, `packages.txt` and `requirements.txt`. Don't commit `airflow_settings.yaml` (it can hold connections and secrets).
 
 ## DAGs
-| DAG | Schedule | Source → target |
+| DAG | Schedule | Sources → BigQuery |
 |---|---|---|
-| `ingest_food_inspections` | daily | CKAN API → `gs://<bucket>/raw/food_inspections/` → `raw.food_inspections` |
-| `ingest_food_licenses` | daily | CKAN API → GCS → `raw.food_licenses` |
-| `ingest_311_requests` | daily | CKAN API (filtered types) → GCS → `raw.requests_311` |
-| `load_static_reference` | manual | Neighborhood boundaries + ACS → `raw.*` |
-| `dbt_build` | daily, after ingestion | runs `dbt build` |
+| `raw_api_ingest` | daily, 7:30 AM ET | data.boston.gov API → `gs://<bucket>/raw/<source>/load_date=.../` → `raw.food_inspections`, `raw.requests_311_legacy`, `raw.requests_311_new`, `raw.food_licenses` |
 
-`dags/ingest_food_inspections.py` is a starter skeleton to copy for the other sources.
+Each source is its own extract → load pair inside the DAG, so one failing doesn't block the others. To add a source, add a `Source(...)` entry to `SOURCES` in `dags/raw_api_ingest.py`.
+
+Static reference data (neighborhood boundaries, Census ACS) lives in dbt seeds, not in Airflow.
+
+For a full history reload, trigger the DAG with `full_refresh = true`.
