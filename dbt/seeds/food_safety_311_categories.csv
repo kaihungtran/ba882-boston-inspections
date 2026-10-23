@@ -8,7 +8,7 @@ legacy,No Utilities - Food Establishment - Water,true,direct_food_safety,facilit
 legacy,No Utilities - Food Establishment - Sewer,true,direct_food_safety,facilities,Health department
 legacy,No Utilities - Food Establishment - Flood,true,direct_food_safety,facilities,Health department
 legacy,No Utilities - Food Establishment - Electricity,true,direct_food_safety,facilities,Health department
-legacy,Rodent Activity,true,environment_context,pests,Strongest pest signal (GenAI review); not tied to one establishment
+legacy,Rodent Activity,true,environment_context,pests,"Strongest pest signal (GenAI review); not tied to one establishment, but kept in the main count (Bruce, 2026-10-23)"
 legacy,Rat Bite,true,environment_context,pests,
 legacy,Pest Infestation - Residential,true,environment_context,pests,Residential
 legacy,Overflowing or Un-kept Dumpster,true,environment_context,trash,
