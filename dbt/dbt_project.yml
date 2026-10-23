@@ -26,6 +26,7 @@ seeds:
         source_system: string
         case_category: string
         is_food_safety: bool
+        signal_group: string
         theme: string
         note: string
     neighborhoods:

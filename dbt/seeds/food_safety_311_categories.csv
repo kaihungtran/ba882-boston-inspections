@@ -1,30 +1,30 @@
-source_system,case_category,is_food_safety,theme,note
-legacy,Rodent Activity,true,pests,Strongest pest signal (GenAI review)
-legacy,Rat Bite,true,pests,
-legacy,Pest Infestation - Residential,true,pests,Residential; listed in the ML spec
-legacy,Unsanitary Conditions - Establishment,true,sanitation,Health department
-legacy,Unsanitary Conditions - Food,true,sanitation,Health department
-legacy,Unsanitary Conditions - Employees,true,hygiene,Health department
-legacy,Food Alert - Confirmed,true,food_alert,Health department
-legacy,Food Alert - Unconfirmed,true,food_alert,Health department
-legacy,Overflowing or Un-kept Dumpster,true,trash,
-legacy,Improper Storage of Trash (Barrels),true,trash,Highest volume; review whether it adds signal or noise
-legacy,No Utilities - Food Establishment - Water,true,facilities,Health department
-legacy,No Utilities - Food Establishment - Sewer,true,facilities,Health department
-legacy,No Utilities - Food Establishment - Flood,true,facilities,Health department
-legacy,No Utilities - Food Establishment - Electricity,true,facilities,Health department
-legacy,Fire in Food Establishment,false,,Establishment incident but not food safety; review
-legacy,Trash on Vacant Lot,false,,
-legacy,Missed Trash/Recycling/Yard Waste/Bulk Item,false,,City collection service issue
-legacy,Empty Litter Basket,false,,Public litter basket
-legacy,Litter Basket Maintenance,false,,
-legacy,Request for Litter Basket Installation,false,,
-legacy,Space Savers,false,,Parking space savers (matched the regex by accident)
-legacy,Dumpster & Loading Noise Disturbances,false,,Noise
-new,Improper Trash Storage,true,trash,Proposed match for legacy Improper Storage of Trash (Barrels); not verified one-to-one
-new,Overflowing Trash,true,trash,Proposed match for legacy Overflowing or Un-kept Dumpster; GenAI says not restaurant-specific
-new,Litter & Debris,false,,
-new,Trash Placed Out Early,false,,
-new,Park Litter & Debris,false,,
-new,Park Overflowing Trash Can,false,,
-new,Student Move-In (Trash Collection),false,,
+source_system,case_category,is_food_safety,signal_group,theme,note
+legacy,Unsanitary Conditions - Establishment,true,direct_food_safety,sanitation,Health department; about an establishment
+legacy,Unsanitary Conditions - Food,true,direct_food_safety,sanitation,Health department
+legacy,Unsanitary Conditions - Employees,true,direct_food_safety,hygiene,Health department
+legacy,Food Alert - Confirmed,true,direct_food_safety,food_alert,Health department
+legacy,Food Alert - Unconfirmed,true,direct_food_safety,food_alert,Health department
+legacy,No Utilities - Food Establishment - Water,true,direct_food_safety,facilities,Health department
+legacy,No Utilities - Food Establishment - Sewer,true,direct_food_safety,facilities,Health department
+legacy,No Utilities - Food Establishment - Flood,true,direct_food_safety,facilities,Health department
+legacy,No Utilities - Food Establishment - Electricity,true,direct_food_safety,facilities,Health department
+legacy,Rodent Activity,true,environment_context,pests,"Strongest pest signal (GenAI review); not tied to one establishment, but kept in the main count (Bruce, 2026-10-23)"
+legacy,Rat Bite,true,environment_context,pests,
+legacy,Pest Infestation - Residential,true,environment_context,pests,Residential
+legacy,Overflowing or Un-kept Dumpster,true,environment_context,trash,
+legacy,Improper Storage of Trash (Barrels),false,environment_context,trash,"Residential and commercial, ~56% of matches; kept out of the food-safety count (Irene, Yanlun). Compare ML with and without"
+legacy,Fire in Food Establishment,false,,,Establishment incident but not food safety
+legacy,Trash on Vacant Lot,false,,,
+legacy,Missed Trash/Recycling/Yard Waste/Bulk Item,false,,,City collection service issue
+legacy,Empty Litter Basket,false,,,Public litter basket
+legacy,Litter Basket Maintenance,false,,,
+legacy,Request for Litter Basket Installation,false,,,
+legacy,Space Savers,false,,,Parking space savers (matched the regex by accident)
+legacy,Dumpster & Loading Noise Disturbances,false,,,Noise
+new,Overflowing Trash,true,environment_context,trash,Proposed match for legacy Overflowing or Un-kept Dumpster; GenAI says not restaurant-specific
+new,Improper Trash Storage,false,environment_context,trash,"New-system match for legacy Improper Storage of Trash (Barrels); treated the same so the count doesn't jump at the cutover"
+new,Litter & Debris,false,,,
+new,Trash Placed Out Early,false,,,
+new,Park Litter & Debris,false,,,
+new,Park Overflowing Trash Can,false,,,
+new,Student Move-In (Trash Collection),false,,,

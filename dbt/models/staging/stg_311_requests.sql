@@ -1,4 +1,8 @@
--- stg_311_requests: legacy + new 311 cases in one shape, with is_food_safety from the seed.
+-- stg_311_requests: legacy + new 311 cases in one shape, with is_food_safety and signal_group from the seed.
+-- is_food_safety = the main food-safety count. signal_group splits relevant categories into
+-- direct_food_safety (complaints about an establishment or its food) and environment_context
+-- (pests and trash nearby). Some environment_context categories, like Improper Storage of Trash,
+-- are is_food_safety = false but still available as a separate neighborhood feature.
 -- Legacy-only columns (case_title, type, reason, subject) and new-only columns (case_topic,
 -- service_name) are NULL on the other feed's rows.
 -- No cross-feed dedupe: the two systems use different ID formats with no overlap (checked 2026-10-21).
@@ -38,6 +42,7 @@ unioned as (
 select
     u.*,
     coalesce(c.is_food_safety, false) as is_food_safety,
+    c.signal_group                    as signal_group,       -- direct_food_safety / environment_context / NULL
     c.theme                           as food_safety_theme
 from unioned as u
 left join {{ ref('food_safety_311_categories') }} as c
