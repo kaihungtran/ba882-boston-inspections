@@ -90,7 +90,17 @@ models:
               arguments:
                 values: ['legacy', 'new']
       - name: is_food_safety
+        description: Counts toward the main food-safety 311 feature.
         data_tests: [not_null]
+      - name: signal_group
+        description: >
+          direct_food_safety (about an establishment or its food) or environment_context (pests and
+          trash nearby). NULL for unrelated categories. Independent of is_food_safety, so ML can build
+          features with and without environment_context categories.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['direct_food_safety', 'environment_context']
 
   - name: stg_neighborhoods
     description: One row per Boston neighborhood (26) with its boundary. Neighborhood-level, not census tracts.
