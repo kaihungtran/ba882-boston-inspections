@@ -124,12 +124,25 @@ models:
 
   - name: int_311_geo
     description: >
-      One row per food-safety 311 case (both systems) with a usable point, default-geocode points removed
-      (more than max(var('default_geocode_min_cases'), 1% of rows) cases at one point). Spec §3.4.
+      One row per 311 case classified by seeds/food_safety_311_categories.csv (both systems) with a usable
+      point, default-geocode points removed (more than max(var('default_geocode_min_cases'), 1% of
+      food-safety cases) at one point). Spec §3.4. Includes categories kept out of the main count
+      (is_food_safety = false) so ML can compare with and without them; marts filter on is_food_safety.
       Original category fields are kept for GenAI.
     columns:
       - name: case_id
         data_tests: [unique, not_null]
+      - name: is_food_safety
+        description: The main count. False for categories kept for comparison only (e.g. Improper Storage of Trash).
+        data_tests: [not_null]
+      - name: signal_group
+        description: From the seed. direct_food_safety or environment_context (not tied to one establishment).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['direct_food_safety', 'environment_context']
+              config:
+                severity: warn
       - name: point
         data_tests: [not_null]
       - name: opened_at

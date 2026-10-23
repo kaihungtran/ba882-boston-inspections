@@ -1,8 +1,11 @@
--- int_311_geo: one row per food-safety 311 case with a usable point. Input to fct_311_nearby.
--- Spec: ml/dbt_feature_spec.md §3.4. Source: stg_311_requests (both systems, is_food_safety from the seed).
---   * keep: is_food_safety, a point inside Boston (staging nulls the rest), opened_at not null
---   * drop default-geocode points: any single point holding more than max(50, 1% of rows) cases.
---     When a caller gives no address the city drops the case on a fixed spot (e.g. City Hall).
+-- int_311_geo: one row per 311 case that the food-safety seed classifies, with a usable point.
+-- Input to fct_311_nearby. Spec: ml/dbt_feature_spec.md §3.4. Source: stg_311_requests.
+--   * keep: categories in seeds/food_safety_311_categories.csv with a signal_group, a point inside Boston
+--     (staging nulls the rest) and opened_at not null. This includes categories kept OUT of the main count
+--     (is_food_safety = false, e.g. Improper Storage of Trash) so ML can compare with and without them.
+--     The main count is is_food_safety = true; marts must filter on it.
+--   * drop default-geocode points: a point holding more than max(50, 1% of food-safety cases) of these
+--     cases. When a caller gives no address the city drops the case on a fixed spot (e.g. City Hall).
 --   * original category fields are kept for GenAI (type, reason, subject, case_topic, service_name)
 --   * neighborhood from stg_neighborhoods (26 neighborhoods, not tracts)
 
@@ -11,7 +14,7 @@
 with cases as (
     select *
     from {{ ref('stg_311_requests') }}
-    where is_food_safety
+    where (is_food_safety or signal_group is not null)
       and point is not null
       and opened_at is not null
 ),
@@ -25,7 +28,7 @@ point_counts as (
 ),
 
 threshold as (
-    select greatest({{ var('default_geocode_min_cases', 50) }}, 0.01 * count(*)) as max_cases_per_point
+    select greatest({{ var('default_geocode_min_cases', 50) }}, 0.01 * countif(is_food_safety)) as max_cases_per_point
     from cases
 ),
 
@@ -50,6 +53,8 @@ select
     k.closed_at,
     k.case_status,
     k.case_category,
+    k.is_food_safety,
+    k.signal_group,
     k.food_safety_theme,
     k.type,
     k.reason,
