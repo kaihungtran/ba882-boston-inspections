@@ -11,9 +11,12 @@ Each run replaces that day's files and partition, so reruns are safe.
 Output tables: raw.food_inspections, raw.requests_311_legacy, raw.requests_311_new, raw.food_licenses
 Neighborhood boundaries and Census ACS are static, so they live in dbt seeds instead.
 
-The first run of an incremental source (table missing) or a manual run with
-full_refresh=true pulls the entire history.
-Raw: values are kept exactly as the API returns them (as text); only _load_date is added.
+An incremental source pulls its entire history when no earlier day's partition holds a full load
+(_load_mode = 'full'): the first run, after a failed first load, or a same-day rerun after a full
+load. A manual run with full_refresh=true also pulls everything. Yearly 311 files are backfilled from
+history_start_year on full loads.
+Raw: values are kept exactly as the API returns them (as text); only _load_date and _load_mode
+('full' or 'incremental') are added.
 """
 import json
 import logging
@@ -49,6 +52,7 @@ class Source:
     date_column: str | None = None
     lookback_days: int = 30
     resource_name: str | None = None   # yearly files whose ID changes every January
+    history_start_year: int | None = None  # yearly files: first year to pull on a full load
 
 
 SOURCES = [
@@ -56,8 +60,9 @@ SOURCES = [
     Source("food_inspections", "incremental", date_column="resultdttm",
            resource_id="4582bec6-2b4f-4f9e-bc55-cbaa73117f4c"),
     # 311, old system: one file per year; rodent and food-establishment complaints are here.
+    # Full loads backfill from history_start_year so older inspections get 311 features (ML).
     Source("requests_311_legacy", "incremental", date_column="open_dt",
-           resource_name="311 Service Requests - {year}"),
+           resource_name="311 Service Requests - {year}", history_start_year=2019),
     # 311, new system (since Aug 2025), different columns from the old one.
     Source("requests_311_new", "incremental", date_column="open_date",
            resource_id="254adca6-64ab-4c5c-9fc0-a6da622be185"),
@@ -82,7 +87,7 @@ def _resource_ids(source: Source, since: str | None, load_date: str) -> list[str
     if source.resource_id:
         return [source.resource_id]
     last_year = pendulum.parse(load_date).year
-    first_year = pendulum.parse(since).year if since else last_year
+    first_year = pendulum.parse(since).year if since else (source.history_start_year or last_year)
     by_name = {(r.get("name") or "").strip().lower(): r["id"]
                for r in _ckan("package_show", id="311-service-requests")["resources"]}
     ids = [by_name.get(source.resource_name.format(year=y).lower())
@@ -144,13 +149,27 @@ def _bigquery():
     return bigquery.Client(project=PROJECT, credentials=_credentials())
 
 
-def table_exists(name: str) -> bool:
-    from google.api_core.exceptions import NotFound
+def has_history(source: Source, load_date: str) -> bool:
+    """True if an earlier day's partition holds a full load (_load_mode = 'full').
 
+    This replaces "does the table exist?". That check skipped the full load whenever the table
+    existed, so an empty table (a failed first load) or a same-day rerun after a full load
+    (WRITE_TRUNCATE on that day's partition) left raw with only the last 30 days.
+    Today's partition is excluded because this run is about to replace it. Tables loaded before
+    _load_mode existed fail the query, which also counts as "no full load yet".
+    """
+    from google.api_core.exceptions import BadRequest, NotFound
+    from google.cloud import bigquery
+
+    sql = (f"SELECT 1 FROM `{PROJECT}.{RAW_DATASET}.{source.name}` "
+           "WHERE _load_mode = 'full' AND _load_date != @load_date LIMIT 1")
+    config = bigquery.QueryJobConfig(query_parameters=[
+        bigquery.ScalarQueryParameter("load_date", "DATE", load_date),
+    ])
     try:
-        _bigquery().get_table(f"{PROJECT}.{RAW_DATASET}.{name}")
-        return True
-    except NotFound:
+        return any(True for _ in _bigquery().query(sql, job_config=config).result())
+    except (NotFound, BadRequest) as exc:
+        log.info("%s: no earlier full load found (%s)", source.name, exc)
         return False
 
 
@@ -191,9 +210,10 @@ def raw_api_ingest():
             load_date = _load_date()
             since = None
             if source.mode == "incremental":
-                full = ctx["params"].get("full_refresh") or not table_exists(source.name)
-                if not full:
-                    since = (pendulum.parse(load_date) - timedelta(days=source.lookback_days)).to_date_string()
+                since = (pendulum.parse(load_date) - timedelta(days=source.lookback_days)).to_date_string()
+                if ctx["params"].get("full_refresh") or not has_history(source, load_date):
+                    since = None
+                print(f"{source.name}: " + (f"incremental, since {since}" if since else "FULL history load"))
 
             bucket = _bucket()
             prefix = f"{GCS_PREFIX}/{source.name}/load_date={load_date}/"
@@ -212,6 +232,7 @@ def raw_api_ingest():
                                 raise ValueError(f"Column names BigQuery can't accept: {bad}")
                         record = {k: _raw(v) for k, v in row.items()}
                         record["_load_date"] = load_date
+                        record["_load_mode"] = "incremental" if since else "full"
                         lines.append(json.dumps(record, ensure_ascii=False))
                     data = ("\n".join(lines) + "\n").encode("utf-8")
                     blob = bucket.blob(f"{prefix}part-{part:05d}.json")
@@ -235,6 +256,7 @@ def raw_api_ingest():
             bq.create_dataset(bigquery.Dataset(f"{PROJECT}.{RAW_DATASET}"), exists_ok=True)
             schema = [bigquery.SchemaField(c, "STRING") for c in meta["columns"]]
             schema.append(bigquery.SchemaField("_load_date", "DATE"))
+            schema.append(bigquery.SchemaField("_load_mode", "STRING"))  # 'full' or 'incremental'
             table = bigquery.Table(f"{PROJECT}.{RAW_DATASET}.{source.name}", schema=schema)
             table.time_partitioning = bigquery.TimePartitioning(
                 type_=bigquery.TimePartitioningType.DAY, field="_load_date")
