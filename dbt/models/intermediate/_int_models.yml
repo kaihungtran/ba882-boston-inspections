@@ -1,0 +1,155 @@
+version: 2
+
+# Intermediate layer (issue #12). Model and column names follow ml/dbt_feature_spec.md §3–4 and
+# docs/data_model.md. Materialized as tables in the "intermediate" schema (project default is ephemeral);
+# the spec asks for int_inspections and int_inspection_history to be materialized because of their
+# window functions, and the spatial joins are expensive to repeat.
+
+models:
+  - name: int_inspections
+    description: >
+      One row per inspection (license_number + inspection_date), rolled up from the violation rows in
+      stg_food_inspections. Adds target (any *** violation), fda_code_era, the previous visit and the
+      routine / follow-up flags (spec §3.1).
+    columns:
+      - name: inspection_id
+        description: farm_fingerprint(license_number || '|' || inspection_date).
+        data_tests: [unique, not_null]
+      - name: license_number
+        data_tests: [not_null]
+      - name: inspection_date
+        description: UTC date, matching the ML notebook (timezone is an open question in the spec).
+        data_tests: [not_null]
+      - name: target
+        description: 1 when the inspection has at least one *** violation, else 0.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: license_category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['FS', 'FT', 'RF', 'MFW']
+              config:
+                severity: warn
+      - name: is_followup
+        description: >
+          Previous visit failed or had a critical, within var('followup_window_days') days (default 30,
+          backed by notebook §6). NULL on an establishment's first visit.
+      - name: is_routine
+        description: not coalesce(is_followup, false). The training mart keeps these rows only.
+        data_tests: [not_null]
+      - name: latitude
+        description: Median over the inspection's rows. NULL when the inspection has no coordinates.
+
+  - name: int_inspection_history
+    description: >
+      Point-in-time features for every inspection (spec §4). Windows end at 1 PRECEDING, so a feature for
+      an inspection on date D uses only earlier inspections. Same grain as int_inspections. The
+      current-visit columns (target, result_fail, n_critical, n_major) are labels, never features.
+    columns:
+      - name: inspection_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_inspections')
+                field: inspection_id
+      - name: n_prior_insp
+        description: Number of earlier inspections. 0 marks the low-risk first visit.
+        data_tests: [not_null]
+      - name: prior_critical_total
+        description: Sum of *** violations over all earlier inspections (0 when none).
+        data_tests: [not_null]
+      - name: prior_critical_rate
+        description: Share of earlier inspections with a critical. NULL on the first visit.
+      - name: last_routine_n_critical
+        description: Criticals at the last earlier routine visit. NULL when there is none.
+      - name: critical_past_365d
+        description: Criticals in earlier inspections within 365 days (0 when none).
+      - name: prev2_routine_target
+        description: Target of the second-to-last earlier routine visit.
+
+  - name: int_license_crosswalk
+    description: >
+      One row per record in the active licenses feed, with the inspection license_number it belongs to
+      (spec §3.3). Passes: name_category_address, property_id_name, address_category; a key that maps to
+      more than one license number is dropped. For scoring and QA only, not training.
+    columns:
+      - name: license_row_key
+        description: Synthetic key for the licenses-feed record (the feed has no license number).
+        data_tests: [unique, not_null]
+      - name: match_method
+        description: NULL when no license number matched.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['name_category_address', 'property_id_name', 'address_category']
+      - name: is_matched
+        data_tests: [not_null]
+      - name: license_added_at
+        description: Never a model feature (only exists for places still open today).
+
+  - name: int_establishment_geo
+    description: >
+      One row per license_number with its latest details, median location and neighborhood; the base for
+      dim_establishment (spec §3.2). stg_neighborhoods is neighborhood-level (26), not census tracts.
+    columns:
+      - name: license_number
+        data_tests: [unique, not_null]
+      - name: is_active_license
+        description: Latest license_status = 'Active'. Scoring population only, never a model feature.
+      - name: location_source
+        description: "'inspections' (median of inspection points), 'licenses' (matched feed record) or NULL."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['inspections', 'licenses']
+      - name: neighborhood_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_neighborhoods')
+                field: neighborhood_id
+      - name: neighborhood_source
+        description: "'point' (spatial join) or 'city_name' (cleaned city equals a neighborhood name)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['point', 'city_name']
+
+  - name: int_311_geo
+    description: >
+      One row per 311 case classified by seeds/food_safety_311_categories.csv (both systems) with a usable
+      point, default-geocode points removed (more than max(var('default_geocode_min_cases'), 1% of
+      food-safety cases) at one point). Spec §3.4. Includes categories kept out of the main count
+      (is_food_safety = false) so ML can compare with and without them; marts filter on is_food_safety.
+      Original category fields are kept for GenAI.
+    columns:
+      - name: case_id
+        data_tests: [unique, not_null]
+      - name: is_food_safety
+        description: The main count. False for categories kept for comparison only (e.g. Improper Storage of Trash).
+        data_tests: [not_null]
+      - name: signal_group
+        description: From the seed. direct_food_safety or environment_context (not tied to one establishment).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['direct_food_safety', 'environment_context']
+              config:
+                severity: warn
+      - name: point
+        data_tests: [not_null]
+      - name: opened_at
+        data_tests: [not_null]
+      - name: neighborhood_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_neighborhoods')
+                field: neighborhood_id
