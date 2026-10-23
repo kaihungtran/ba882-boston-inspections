@@ -17,3 +17,22 @@ models:
     marts:
       +materialized: table
       +schema: marts
+
+seeds:
+  boston_inspections:
+    +schema: seeds
+    food_safety_311_categories:
+      +column_types:
+        source_system: string
+        case_category: string
+        is_food_safety: bool
+        signal_group: string
+        theme: string
+        note: string
+    neighborhoods:
+      +column_types:
+        neighborhood_id: string
+        neighborhood: string
+        acres: float64
+        sqmiles: float64
+        geometry_geojson: string
