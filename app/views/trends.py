@@ -1,11 +1,15 @@
 import charts
 import streamlit as st
+import ui
 
 import data
 
-st.title("Inspection pass/fail trends")
-charts.stub_banner()
-st.caption("One inspection = one license on one date. An inspection fails if any of its rows has a failing result.")
+ui.page_header(
+    "Inspections · Phase 1",
+    "Pass/fail trends",
+    "One inspection is one license on one date. It counts as failed if any of its rows has a failing result.",
+)
+ui.stub_notice()
 
 monthly = data.inspections_monthly()
 
@@ -26,24 +30,27 @@ by_month = df.groupby("month", as_index=False)[["n_inspections", "n_failed"]].su
 by_month["fail_rate"] = by_month["n_failed"] / by_month["n_inspections"]
 
 total, failed = int(by_month["n_inspections"].sum()), int(by_month["n_failed"].sum())
-m1, m2, m3 = st.columns(3)
-m1.metric("Inspections", f"{total:,}")
-m2.metric("Failed", f"{failed:,}")
-m3.metric("Fail rate", f"{failed / total:.1%}")
+span = f"{start:%b %Y} to {end:%b %Y}"
+ui.stat_row([
+    ("Inspections", f"{total:,}", span),
+    ("Failed", f"{failed:,}", "at least one failing result"),
+    ("Fail rate", f"{failed / total:.1%}", "share of inspections"),
+])
 
-st.subheader("Fail rate by month")
-st.altair_chart(charts.rate_line(by_month, "month", "fail_rate", "Fail rate"), width="stretch")
+ui.section("Fail rate by month", "share of that month's inspections that failed")
+st.altair_chart(charts.rate_line(by_month, "month", "fail_rate", "Fail rate"), width="stretch", theme=None)
 
-st.subheader("Inspections by month")
+ui.section("Inspections by month", "passed and failed")
 long = by_month.assign(Passed=by_month["n_inspections"] - by_month["n_failed"], Failed=by_month["n_failed"])
 long = long.melt(id_vars="month", value_vars=["Passed", "Failed"], var_name="result", value_name="n")
 st.altair_chart(
     charts.stacked_bars(long, "month", "n", "result", ["Passed", "Failed"],
                         [charts.STATUS_GOOD, charts.STATUS_CRITICAL], "Inspections", "Result"),
     width="stretch",
+    theme=None,
 )
 
-with st.expander("Table"):
+with st.expander("Show as a table"):
     st.dataframe(
         by_month.sort_values("month", ascending=False),
         hide_index=True,

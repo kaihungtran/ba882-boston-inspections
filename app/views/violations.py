@@ -1,16 +1,20 @@
 import altair as alt
 import charts
 import streamlit as st
+import ui
 
 import data
 
 LEVELS = ["*", "**", "***"]
-# Ordinal blue steps: more stars (more serious) = darker.
-LEVEL_COLORS = [charts.SEQUENTIAL[2], charts.SEQUENTIAL[4], charts.SEQUENTIAL[6]]
+# Ordinal blue steps: more stars (more serious) = stronger color.
+LEVEL_COLORS = [charts.sequential()[i] for i in (2, 4, 6)]
 
-st.title("Top violation types")
-charts.stub_banner()
-st.caption("Counts violation rows. Severity: * minor, ** major, *** critical.")
+ui.page_header(
+    "Inspections · Phase 1",
+    "Top violation types",
+    "Counts violation rows. Severity is the inspector's star rating: * minor, ** major, *** critical.",
+)
+ui.stub_notice()
 
 viol = data.violations_by_type()
 
@@ -30,24 +34,26 @@ if top.empty:
     st.info("No violations match these filters.")
     st.stop()
 
+ui.section(f"Top {len(top)} violations", f"{start} to {end}")
 chart = (
     alt.Chart(top)
-    .mark_bar(cornerRadiusEnd=4, height={"band": 0.7})
+    .mark_bar(cornerRadiusEnd=3, height={"band": 0.68})
     .encode(
         x=alt.X("n_violations:Q", title="Violations"),
-        y=alt.Y("violation_description:N", sort="-x", title=None, axis=alt.Axis(labelLimit=320)),
+        y=alt.Y("violation_description:N", sort="-x", title=None,
+                axis=alt.Axis(labelLimit=320, labelColor=ui.chart_text(), labelFontSize=12)),
         color=alt.Color("violation_level:N", title="Severity",
-                        scale=alt.Scale(domain=LEVELS, range=LEVEL_COLORS),
-                        legend=alt.Legend(orient="top")),
+                        scale=alt.Scale(domain=LEVELS, range=LEVEL_COLORS)),
         tooltip=[alt.Tooltip("violation_description:N", title="Violation"),
                  alt.Tooltip("violation_level:N", title="Severity"),
                  alt.Tooltip("n_violations:Q", title="Violations", format=",")],
     )
 )
 # Streamlit overrides the chart's own height, so set it here: one 26px row per violation type.
-st.altair_chart(chart, width="stretch", height=max(240, 26 * top["violation_description"].nunique() + 60))
+st.altair_chart(chart, width="stretch", theme=None,
+                height=max(240, 26 * top["violation_description"].nunique() + 60))
 
-with st.expander("Table"):
+with st.expander("Show as a table"):
     st.dataframe(
         top, hide_index=True, width="stretch",
         column_config={

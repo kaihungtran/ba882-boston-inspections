@@ -55,3 +55,6 @@ reports/.quarto/
 .vscode/
 .idea/
 dbt/.user.yml
+
+# Streamlit
+.streamlit/secrets.toml

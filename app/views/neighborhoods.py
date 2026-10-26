@@ -1,21 +1,24 @@
 import charts
 import streamlit as st
+import ui
 
 import data
 
-st.title("Results by neighborhood")
-charts.stub_banner()
-st.caption(
+ui.page_header(
+    "Inspections · Phase 1",
+    "Results by neighborhood",
     "Inspections are placed in a neighborhood by their coordinates, or by the city field when "
-    "coordinates are missing. Boundaries are real (stg_neighborhoods)."
+    "coordinates are missing. The boundaries are real, from stg_neighborhoods.",
 )
+ui.stub_notice()
 
 by_hood = data.inspections_by_neighborhood()
 shapes = data.neighborhood_shapes()
 
 years = sorted(by_hood["year"].dropna().astype(int).unique())
-start, end = st.select_slider("Years", options=years, value=(years[0], years[-1]))
-min_inspections = st.number_input("Hide neighborhoods with fewer inspections than", 0, 1000, 20, step=10)
+c1, c2 = st.columns([2, 1])
+start, end = c1.select_slider("Years", options=years, value=(years[0], years[-1]))
+min_inspections = c2.number_input("Hide neighborhoods with fewer inspections than", 0, 1000, 20, step=10)
 
 df = (
     by_hood[by_hood["year"].between(start, end)]
@@ -26,7 +29,7 @@ df["fail_rate"] = df["n_failed"] / df["n_inspections"]
 # n_establishments summed over years can double count; it's an upper bound across the range.
 shown = df[(df["n_inspections"] >= min_inspections) & (df["neighborhood"] != "Unmatched")]
 
-st.subheader("Fail rate")
+ui.section("Fail rate", f"{start} to {end} · stronger color is a higher fail rate")
 charts.choropleth(
     shapes, shown[["neighborhood", "fail_rate", "n_inspections"]], "fail_rate",
     lambda r: f"Fail rate {r['fail_rate']:.1%} of {int(r['n_inspections']):,} inspections",
@@ -36,7 +39,7 @@ unmatched = df.loc[df["neighborhood"] == "Unmatched", "n_inspections"].sum()
 if unmatched:
     st.caption(f"{int(unmatched):,} inspections couldn't be placed in a neighborhood and aren't on the map.")
 
-st.subheader("Table")
+ui.section("By the numbers", "all neighborhoods, including those hidden from the map")
 st.dataframe(
     df.sort_values("fail_rate", ascending=False),
     hide_index=True,
