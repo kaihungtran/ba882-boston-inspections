@@ -1,0 +1,12 @@
+version: 2
+
+seeds:
+  - name: food_safety_311_categories
+    description: >
+      Which 311 categories count as food-safety complaints, per system. is_food_safety drives the main
+      count; signal_group (direct_food_safety / environment_context) lets ML build separate features.
+      Reviewed by GenAI (Irene) and Yanlun 2026-10-21. Add new-system rows when Inspectional Services
+      moves over (Fall 2026).
+  - name: neighborhoods
+    description: >
+      Boston's 26 neighborhood boundaries. Built by scripts/build_neighborhood_seed.py; don't edit by hand.
