@@ -9,14 +9,14 @@ Owner: **BI & app** (see [TEAM.md](../TEAM.md))
 
 | Page | Data |
 |---|---|
-| Pass/fail trends | `stg_food_inspections` (stub data for now) |
-| Results by neighborhood (map + table) | `stg_food_inspections` (stub) + `stg_neighborhoods` boundaries (real) |
-| Top violations | `stg_food_inspections` (stub) |
-| Food-safety 311 (map + monthly) | `stg_311_requests` where `is_food_safety`, + `stg_neighborhoods` (real) |
+| Pass/fail trends | `stg_food_inspections` |
+| Results by neighborhood (map + table) | `stg_food_inspections` + `stg_neighborhoods` boundaries |
+| Top violations | `stg_food_inspections` |
+| Food-safety 311 (map + monthly) | `stg_311_requests` where `is_food_safety`, + `stg_neighborhoods` |
 
-`raw.food_inspections` isn't in BigQuery yet, so the inspection pages use randomly generated
-rows shaped like `stg_food_inspections` (see `stub_data.py`). Every stub page shows a **STUB DATA**
-notice. Set `USE_STUB_INSPECTIONS=false` once `stg_food_inspections` is built in your dataset.
+If the dataset you point at has no `stg_food_inspections` yet, set `USE_STUB_INSPECTIONS=true`
+and the inspection pages use randomly generated rows in the same shape (see `stub_data.py`),
+with a **STUB DATA** notice on every such page.
 
 The app has a light and a dark theme. Viewers switch (or follow their system setting) from the
 ⋮ menu → Settings.
@@ -41,7 +41,7 @@ Set these in `.env`:
 |---|---|---|
 | `GCP_PROJECT_ID` | `ba882-team10-inspections` | |
 | `BQ_STAGING_DATASET` | `dev_<you>_staging` | Where your `stg_*` models are built. The shared `staging` dataset is empty until dbt runs in prod |
-| `USE_STUB_INSPECTIONS` | `true` | `true` until `stg_food_inspections` exists |
+| `USE_STUB_INSPECTIONS` | `false` | `true` only if your dataset has no `stg_food_inspections` |
 
 Run from the repo root so Streamlit picks up `.streamlit/config.toml` (the theme). Query results
 are cached for an hour (`st.cache_data`), so clicking around doesn't rescan BigQuery. **Clear

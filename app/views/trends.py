@@ -15,10 +15,14 @@ monthly = data.inspections_monthly()
 
 categories = sorted(monthly["license_category"].unique())
 months = sorted(monthly["month"].unique())
+# Default to the last five years: the feed starts in 2006 with a handful of inspections a
+# month, which makes the early fail rates meaningless. The slider still reaches back to the start.
+five_years_ago = months[-1].replace(year=months[-1].year - 5)
+default_start = next((m for m in months if m >= five_years_ago), months[0])
 c1, c2 = st.columns([1, 2])
 selected_cats = c1.multiselect("License category", categories, default=categories)
 start, end = c2.select_slider(
-    "Months", options=months, value=(months[0], months[-1]), format_func=lambda m: m.strftime("%b %Y")
+    "Months", options=months, value=(default_start, months[-1]), format_func=lambda m: m.strftime("%b %Y")
 )
 
 df = monthly[monthly["license_category"].isin(selected_cats) & monthly["month"].between(start, end)]

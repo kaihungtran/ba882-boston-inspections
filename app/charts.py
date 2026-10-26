@@ -67,7 +67,9 @@ def _theme() -> dict:
 def _hover_line(df: pd.DataFrame, x: str, y: str, y_title: str, y_format: str, color: str) -> alt.Chart:
     """Single-series line with a crosshair + tooltip on the nearest point."""
     nearest = alt.selection_point(nearest=True, on="pointerover", fields=[x], empty=False)
-    base = alt.Chart(df).encode(x=alt.X(f"{x}:T", title=None))
+    base = alt.Chart(df).encode(
+        x=alt.X(f"{x}:T", title=None, axis=alt.Axis(format="%b %Y", labelOverlap="greedy", labelSeparation=16))
+    )
     line = base.mark_line(strokeWidth=2, color=color).encode(
         y=alt.Y(f"{y}:Q", title=y_title, axis=alt.Axis(format=y_format))
     )
@@ -101,7 +103,7 @@ def stacked_bars(df: pd.DataFrame, x: str, y: str, color: str, domain: list, col
         .mark_bar(stroke=ui.surface(), strokeWidth=1)
         .encode(
             x=alt.X("month_label:O", title=None, sort=month_order,
-                    axis=alt.Axis(labelAngle=0, labelOverlap="greedy")),
+                    axis=alt.Axis(labelAngle=0, labelOverlap="greedy", labelSeparation=16)),
             y=alt.Y(f"sum({y}):Q", title=y_title),
             color=alt.Color(f"{color}:N", title=color_title,
                             scale=alt.Scale(domain=domain, range=colors)),
