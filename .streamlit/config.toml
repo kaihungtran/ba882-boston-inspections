@@ -1,0 +1,63 @@
+# Streamlit theme for app/. Read from the working directory, so run the app from the repo root.
+# Light and dark are both defined, so viewers pick one (or follow their system) in the
+# ⋮ menu → Settings. Design tokens are mirrored in app/ui.py; change both together.
+
+[client]
+toolbarMode = "viewer"
+
+[theme]
+font = "IBM Plex Sans, system-ui, -apple-system, Segoe UI, sans-serif"
+headingFont = "Fraunces, Georgia, Times New Roman, serif"
+codeFont = "IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, monospace"
+baseRadius = "3px"
+buttonRadius = "3px"
+showWidgetBorder = false
+showSidebarBorder = false
+
+[theme.light]
+primaryColor = "#1c5cab"
+backgroundColor = "#f7f5f0"
+secondaryBackgroundColor = "#ebe8df"
+textColor = "#1c1b18"
+linkColor = "#1c5cab"
+borderColor = "#d8d4c8"
+dataframeBorderColor = "#d8d4c8"
+dataframeHeaderBackgroundColor = "#ebe8df"
+dataframeHeaderTextColor = "#52514e"
+codeBackgroundColor = "#ebe8df"
+chartCategoricalColors = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948"]
+chartSequentialColors = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
+
+[theme.light.sidebar]
+backgroundColor = "#132a44"
+secondaryBackgroundColor = "#1d3a58"
+textColor = "#dfe7ef"
+primaryColor = "#8fbcf0"
+linkColor = "#dfe7ef"
+borderColor = "#24436a"
+codeBackgroundColor = "#1d3a58"
+codeTextColor = "#cfe0f5"
+
+[theme.dark]
+primaryColor = "#3987e5"
+backgroundColor = "#171614"
+secondaryBackgroundColor = "#242320"
+textColor = "#ece9e1"
+linkColor = "#8fbcf0"
+borderColor = "#38362f"
+dataframeBorderColor = "#38362f"
+dataframeHeaderBackgroundColor = "#242320"
+dataframeHeaderTextColor = "#b8b4a8"
+codeBackgroundColor = "#242320"
+chartCategoricalColors = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"]
+chartSequentialColors = ["#0d366b", "#184f95", "#256abf", "#3987e5", "#6da7ec", "#9ec5f4", "#cde2fb"]
+
+[theme.dark.sidebar]
+backgroundColor = "#0e1c2e"
+secondaryBackgroundColor = "#1a3049"
+textColor = "#dfe7ef"
+primaryColor = "#8fbcf0"
+linkColor = "#dfe7ef"
+borderColor = "#24436a"
+codeBackgroundColor = "#1a3049"
+codeTextColor = "#cfe0f5"

@@ -1,0 +1,2 @@
+# Streamlit Community Cloud reads this file from the repo root. The app's real pins live in app/.
+-r app/requirements.txt

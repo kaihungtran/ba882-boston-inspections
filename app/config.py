@@ -1,9 +1,11 @@
-"""Settings read from the repo-root .env (never hardcode project or dataset names)."""
+"""Settings, read from the repo-root .env locally or from Streamlit secrets when deployed
+(Community Cloud has no .env). Never hardcode project or dataset names."""
 
 import os
 import re
 from pathlib import Path
 
+import streamlit as st
 from dotenv import load_dotenv
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -18,10 +20,23 @@ class ConfigError(RuntimeError):
     pass
 
 
+def _setting(name: str, default: str = "") -> str:
+    value = os.getenv(name)
+    if value is None:
+        try:
+            value = st.secrets.get(name)  # deployed: Settings → Secrets
+        except Exception:  # noqa: BLE001 - no secrets file locally
+            value = None
+    return str(value if value is not None else default).strip()
+
+
 def _require(name: str, pattern: re.Pattern) -> str:
-    value = os.getenv(name, "").strip()
+    value = _setting(name)
     if not value:
-        raise ConfigError(f"{name} is not set. Add it to .env in the repo root (see .env.example).")
+        raise ConfigError(
+            f"{name} is not set. Add it to .env in the repo root (see .env.example), "
+            "or to the app's secrets when deployed."
+        )
     if not pattern.match(value):
         raise ConfigError(f"{name}={value!r} is not a valid BigQuery identifier.")
     return value
@@ -36,7 +51,7 @@ def staging_dataset() -> str:
 
 
 def use_stub_inspections() -> bool:
-    return os.getenv("USE_STUB_INSPECTIONS", "true").strip().lower() in {"1", "true", "yes", "on"}
+    return _setting("USE_STUB_INSPECTIONS", "true").lower() in {"1", "true", "yes", "on"}
 
 
 def table(name: str) -> str:
