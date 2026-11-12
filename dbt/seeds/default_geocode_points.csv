@@ -1,0 +1,5 @@
+point_id,latitude,longitude,address,classified_cases,note
+city_hall_1,42.36029492862369,-71.05827005696099,1 City Hall Plz,389,"Default geocode: 10 unrelated case types over 2019-2026"
+city_hall_100,42.35952000000461,-71.05875000123329,100 City Hall Plz,117,"Default geocode variant: 9 case types over 2019-2026"
+city_hall_100_old,42.360100000004614,-71.0581400012333,100 City Hall Plz,32,"Older default variant, 2019-2022"
+city_hall_brighton,42.360127933493686,-71.05845859714003,20 Washington St (Brighton),14,"Failed geocode: City Hall coordinates on a Brighton address"
