@@ -34,13 +34,14 @@ Spec: `ml/dbt_feature_spec.md` §3–4 (ML). Materialized as tables in the `inte
 
 | Model | Grain | Notes |
 |---|---|---|
+| `int_violations` | one row per violation record | each inspection's rows from its latest load only, so an edited comment isn't counted twice; full description and comment text |
 | `int_inspections` | one row per inspection (license + date) | violations rolled up; `target` = any `***`; `is_routine` / `is_followup` via `var('followup_window_days', 30)` |
 | `int_inspection_history` | one row per inspection | ~20 point-in-time features; every window ends at `1 PRECEDING` (no leakage) |
 | `int_license_crosswalk` | one row per licenses-feed record | matched `license_number`: name+category+address, then property_id+name, then address+category |
 | `int_establishment_geo` | one row per license | latest details, median location, neighborhood; `is_active_license` for scoring only |
-| `int_311_geo` | one row per classified 311 case | default-geocode points removed; main count = `is_food_safety`, `signal_group` kept |
+| `int_311_geo` | one row per classified 311 case | default geocodes in `seeds/default_geocode_points.csv` removed; main count = `is_food_safety`, `signal_group` kept |
 
-Tests: grain and leakage asserts (`tests/assert_int_*`), license match-rate warning (`tests/warn_license_match_rate.sql`).
+Tests: grain and leakage asserts (`tests/assert_int_*`), license match-rate warning (`tests/warn_license_match_rate.sql`), new default-geocode candidates (`tests/warn_new_geocode_pileup.sql`).
 Unmatched licenses for manual review: `analyses/int_license_crosswalk_unmatched.sql`.
 
 ```bash
@@ -50,6 +51,7 @@ dbt build --select staging intermediate --profiles-dir .
 ## Seeds
 - `food_safety_311_categories.csv`: which 311 categories count as food safety. Edit by hand; ML + GenAI own it.
 - `neighborhoods.csv`: generated. Rebuild with `python3 scripts/build_neighborhood_seed.py`.
+- `default_geocode_points.csv`: 311 default geocodes (City Hall Plaza and variants) removed by `int_311_geo`. Add a point when `warn_new_geocode_pileup` flags one and you confirm it.
 
 ```bash
 dbt seed --profiles-dir .
