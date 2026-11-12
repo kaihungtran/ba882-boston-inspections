@@ -34,6 +34,7 @@ Spec: `ml/dbt_feature_spec.md` §3–4 (ML). Materialized as tables in the `inte
 
 | Model | Grain | Notes |
 |---|---|---|
+| `int_violations` | one row per violation record | each inspection's rows from its latest load only, so an edited comment isn't counted twice; full description and comment text |
 | `int_inspections` | one row per inspection (license + date) | violations rolled up; `target` = any `***`; `is_routine` / `is_followup` via `var('followup_window_days', 30)` |
 | `int_inspection_history` | one row per inspection | ~20 point-in-time features; every window ends at `1 PRECEDING` (no leakage) |
 | `int_license_crosswalk` | one row per licenses-feed record | matched `license_number`: name+category+address, then property_id+name, then address+category |

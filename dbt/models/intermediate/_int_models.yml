@@ -6,6 +6,27 @@ version: 2
 # window functions, and the spatial joins are expensive to repeat.
 
 models:
+  - name: int_violations
+    description: >
+      One row per violation record (an inspection with no violations keeps one row). Keeps each inspection's
+      rows from its latest daily load only, so an edited inspector comment replaces the old version instead of
+      adding a second row (staging's dedupe key includes the comment text). Text fields are kept as staged.
+    columns:
+      - name: violation_id
+        data_tests: [unique, not_null]
+      - name: inspection_id
+        description: Same key as int_inspections.inspection_id (license_number + inspection_date).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_inspections')
+                field: inspection_id
+      - name: inspector_comments
+        description: Original text, for GenAI.
+      - name: source_load_date
+        description: The daily load these rows come from (the inspection's latest).
+
   - name: int_inspections
     description: >
       One row per inspection (license_number + inspection_date), rolled up from the violation rows in
