@@ -58,4 +58,18 @@ dbt seed --profiles-dir .
 dbt build --select staging --profiles-dir .
 ```
 
-Planned marts: `dim_establishment`, `dim_neighborhood`, `fct_inspections`, `fct_violations`, `fct_311_nearby`, and later `ml_features`.
+## Marts (built)
+Materialized as tables in the `marts` schema. Keys: `fct_violations` → `fct_inspections` → `dim_establishment` → `dim_neighborhood`.
+
+| Model | Grain | Notes |
+|---|---|---|
+| `fct_violations` | one row per violation | full `violation_description` and `inspector_comments` for GenAI; an edited comment is one row (latest wording) |
+| `fct_inspections` | one row per inspection (license + date) | result, violation counts, `target`, `is_routine` / `is_followup` |
+| `dim_establishment` | one row per license | latest details, location, neighborhood, `is_active_license` (scoring only) |
+| `dim_neighborhood` | one row per neighborhood (26) | boundary; census tracts and ACS not loaded yet |
+
+```bash
+dbt build --select marts --profiles-dir .
+```
+
+Next: `fct_311_nearby`, `ml_features`, `ml_scoring_features` (`ml/dbt_feature_spec.md` §3.5, §5).
