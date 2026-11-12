@@ -1,0 +1,28 @@
+version: 2
+
+seeds:
+  - name: default_geocode_points
+    description: >
+      Fixed list of 311 default geocodes: the spots where the city drops a case that has no usable address
+      (City Hall Plaza and variants). int_311_geo removes cases within var('default_geocode_radius_m') meters
+      of these points. A fixed list replaces the old data-driven threshold (max(50, 1% of cases)), which
+      changed as data arrived: later cases could push a point over the threshold and remove its earlier
+      cases from training, and after the 2019 backfill the threshold rose to 610 and removed nothing.
+      Built 2026-11-12 from all classified 311 cases 2019 onward (both systems); classified_cases is that
+      count. Real addresses with many trash complaints (e.g. Back Bay alleys) are deliberately NOT listed.
+      tests/warn_new_geocode_pileup.sql flags new candidates for review.
+    config:
+      column_types:
+        point_id: string
+        latitude: float64
+        longitude: float64
+        address: string
+        classified_cases: int64
+        note: string
+    columns:
+      - name: point_id
+        data_tests: [unique, not_null]
+      - name: latitude
+        data_tests: [not_null]
+      - name: longitude
+        data_tests: [not_null]

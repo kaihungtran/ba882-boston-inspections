@@ -1,0 +1,84 @@
+version: 2
+
+# Marts: tables the dashboard, ML and GenAI read from (docs/data_model.md). Materialized as tables in the
+# "marts" schema (dbt_project.yml). Keys: fct_violations -> fct_inspections -> dim_establishment -> dim_neighborhood.
+
+models:
+  - name: fct_violations
+    description: >
+      One row per violation, with the full violation description and inspector comment for GenAI tagging and
+      restaurant summaries. An edited comment is one row (its latest wording), not two: see int_violations.
+    columns:
+      - name: violation_id
+        data_tests: [unique, not_null]
+      - name: inspection_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_inspections')
+                field: inspection_id
+      - name: license_number
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_establishment')
+                field: license_number
+      - name: violation_level
+        description: "*, ** or ***; NULL when the city recorded no level."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['*', '**', '***']
+      - name: violation_description
+        description: Full original text (trimmed only).
+      - name: inspector_comments
+        description: Full original text (trimmed only). The latest wording when the city edited it.
+
+  - name: fct_inspections
+    description: >
+      One row per inspection (license_number + inspection_date): result, violation counts, the ML target and the
+      routine / follow-up flags.
+    columns:
+      - name: inspection_id
+        data_tests: [unique, not_null]
+      - name: license_number
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_establishment')
+                field: license_number
+      - name: target
+        description: 1 when the inspection had at least one critical (***) violation.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+                quote: false
+      - name: is_routine
+        data_tests: [not_null]
+
+  - name: dim_establishment
+    description: One row per establishment (license_number) with its latest details, location and neighborhood.
+    columns:
+      - name: license_number
+        data_tests: [unique, not_null]
+      - name: is_active_license
+        description: For choosing the scoring population only, never a model feature.
+      - name: neighborhood_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_neighborhood')
+                field: neighborhood_id
+
+  - name: dim_neighborhood
+    description: One row per Boston neighborhood (26) with its boundary. Census tracts and ACS are not loaded yet.
+    columns:
+      - name: neighborhood_id
+        data_tests: [unique, not_null]
+      - name: neighborhood
+        data_tests: [unique, not_null]

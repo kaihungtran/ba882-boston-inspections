@@ -4,8 +4,11 @@
 --     (staging nulls the rest) and opened_at not null. This includes categories kept OUT of the main count
 --     (is_food_safety = false, e.g. Improper Storage of Trash) so ML can compare with and without them.
 --     The main count is is_food_safety = true; marts must filter on it.
---   * drop default-geocode points: a point holding more than max(50, 1% of food-safety cases) of these
---     cases. When a caller gives no address the city drops the case on a fixed spot (e.g. City Hall).
+--   * drop default geocodes: cases within var('default_geocode_radius_m') meters of a point in
+--     seeds/default_geocode_points.csv (City Hall Plaza and variants, where the city drops cases with no
+--     usable address). A fixed list, not a count threshold, so a case's inclusion never depends on cases
+--     that arrive later and the result is reproducible. tests/warn_new_geocode_pileup.sql flags new
+--     candidates for review.
 --   * original category fields are kept for GenAI (type, reason, subject, case_topic, service_name)
 --   * neighborhood from stg_neighborhoods (26 neighborhoods, not tracts)
 
@@ -19,26 +22,26 @@ with cases as (
       and opened_at is not null
 ),
 
-point_counts as (
-    select
-        st_astext(point)                                                as point_wkt,
-        count(*)                                                        as cases_at_point
-    from cases
-    group by point_wkt
+default_points as (
+    select st_geogpoint(longitude, latitude) as default_point
+    from {{ ref('default_geocode_points') }}
 ),
 
-threshold as (
-    select greatest({{ var('default_geocode_min_cases', 50) }}, 0.01 * countif(is_food_safety)) as max_cases_per_point
-    from cases
+-- Cases on a default point. Found with an inner spatial join, then excluded by case_id: BigQuery does not
+-- allow NOT EXISTS / anti-joins whose only condition is a distance.
+on_default_point as (
+    select distinct c.case_id
+    from cases as c
+    join default_points as d
+      on st_dwithin(c.point, d.default_point, {{ var('default_geocode_radius_m', 5) }})
 ),
 
 kept as (
     select c.*
     from cases as c
-    join point_counts as pc
-      on pc.point_wkt = st_astext(c.point)
-    cross join threshold as t
-    where pc.cases_at_point <= t.max_cases_per_point
+    left join on_default_point as x
+      on x.case_id = c.case_id
+    where x.case_id is null
 ),
 
 neighborhoods as (

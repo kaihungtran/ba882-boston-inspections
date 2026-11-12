@@ -6,6 +6,27 @@ version: 2
 # window functions, and the spatial joins are expensive to repeat.
 
 models:
+  - name: int_violations
+    description: >
+      One row per violation record (an inspection with no violations keeps one row). Keeps each inspection's
+      rows from its latest daily load only, so an edited inspector comment replaces the old version instead of
+      adding a second row (staging's dedupe key includes the comment text). Text fields are kept as staged.
+    columns:
+      - name: violation_id
+        data_tests: [unique, not_null]
+      - name: inspection_id
+        description: Same key as int_inspections.inspection_id (license_number + inspection_date).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_inspections')
+                field: inspection_id
+      - name: inspector_comments
+        description: Original text, for GenAI.
+      - name: source_load_date
+        description: The daily load these rows come from (the inspection's latest).
+
   - name: int_inspections
     description: >
       One row per inspection (license_number + inspection_date), rolled up from the violation rows in
@@ -125,10 +146,11 @@ models:
   - name: int_311_geo
     description: >
       One row per 311 case classified by seeds/food_safety_311_categories.csv (both systems) with a usable
-      point, default-geocode points removed (more than max(var('default_geocode_min_cases'), 1% of
-      food-safety cases) at one point). Spec §3.4. Includes categories kept out of the main count
-      (is_food_safety = false) so ML can compare with and without them; marts filter on is_food_safety.
-      Original category fields are kept for GenAI.
+      point. Cases within var('default_geocode_radius_m') (5) meters of a point in
+      seeds/default_geocode_points.csv (City Hall Plaza and variants) are removed. This fixed list replaces
+      spec §3.4's count threshold, which let later cases remove earlier ones and changed with data volume.
+      Includes categories kept out of the main count (is_food_safety = false) so ML can compare with and
+      without them; marts filter on is_food_safety. Original category fields are kept for GenAI.
     columns:
       - name: case_id
         data_tests: [unique, not_null]

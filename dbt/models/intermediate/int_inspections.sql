@@ -1,5 +1,6 @@
 -- int_inspections: violation rows -> one row per inspection (license_number + inspection_date).
--- Spec: ml/dbt_feature_spec.md §3.1 and docs/data_model.md. Source: stg_food_inspections (one row per violation).
+-- Spec: ml/dbt_feature_spec.md §3.1 and docs/data_model.md. Source: int_violations (one row per violation,
+-- superseded copies from edited comments already removed, so counts aren't doubled).
 --
 -- target         = has at least one critical (***) violation, as 0/1
 -- is_followup    = previous visit failed or had a critical, and came within var('followup_window_days') days
@@ -9,7 +10,7 @@
 {{ config(materialized='table', schema='intermediate') }}
 
 with violations as (
-    select * from {{ ref('stg_food_inspections') }}
+    select * from {{ ref('int_violations') }}
 ),
 
 inspections as (
