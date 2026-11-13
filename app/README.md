@@ -9,10 +9,14 @@ Owner: **BI & app** (see [TEAM.md](../TEAM.md))
 
 | Page | Data |
 |---|---|
-| Pass/fail trends | `stg_food_inspections` |
-| Results by neighborhood (map + table) | `stg_food_inspections` + `stg_neighborhoods` boundaries |
-| Top violations | `stg_food_inspections` |
-| Food-safety 311 (map + monthly) | `stg_311_requests` where `is_food_safety`, + `stg_neighborhoods` |
+| Pass/fail trends | `int_inspections` (one row per inspection; routine vs follow-up) |
+| Results by neighborhood (map + table) | `int_inspections` + `int_establishment_geo` (neighborhood per license) + `stg_neighborhoods` boundaries |
+| Top violations | `stg_food_inspections` (violation rows) |
+| Food-safety 311 (map + monthly) | `stg_311_requests` where `is_food_safety`, split by `signal_group`, + `stg_neighborhoods` |
+| Data freshness | Latest `_load_date`, row counts and date coverage of each staging view |
+
+Every page shows a banner when the last load is older than dbt's source freshness thresholds
+(behind after 2 days, stale after 4; see `config.py` and `dbt/models/staging/_sources.yml`).
 
 If the dataset you point at has no `stg_food_inspections` yet, set `USE_STUB_INSPECTIONS=true`
 and the inspection pages use randomly generated rows in the same shape (see `stub_data.py`),
@@ -40,7 +44,8 @@ Set these in `.env`:
 | Variable | Example | Notes |
 |---|---|---|
 | `GCP_PROJECT_ID` | `ba882-team10-inspections` | |
-| `BQ_STAGING_DATASET` | `dev_<you>_staging` | Where your `stg_*` models are built. The shared `staging` dataset is empty until dbt runs in prod |
+| `BQ_STAGING_DATASET` | `dev_<you>_staging` | Where the `stg_*` views are. The shared `staging` dataset is empty until dbt runs in prod |
+| `BQ_INTERMEDIATE_DATASET` | `dev_<you>_intermediate` | Where the `int_*` tables are. Optional: defaults to the staging dataset's `_intermediate` sibling |
 | `USE_STUB_INSPECTIONS` | `false` | `true` only if your dataset has no `stg_food_inspections` |
 
 Run from the repo root so Streamlit picks up `.streamlit/config.toml` (the theme). Query results
@@ -91,5 +96,5 @@ Dependencies come from the root `requirements.txt`, which points at `app/require
 | `../.streamlit/config.toml` | Streamlit theme, light and dark. Lives in the repo root because Streamlit reads it from the working directory |
 | `../.streamlit/secrets.toml.example` | Template for the deployed app's secrets |
 
-When the marts land (`fct_inspections`, `dim_neighborhood`), point the inspection queries in
-`queries.py` at them instead of rolling `stg_food_inspections` up to inspections in the app.
+When the marts land (PR #44: `fct_inspections`, `dim_establishment`, `fct_violations`), point the
+queries in `queries.py` at them; the intermediate tables are the same grain, so it's a rename.

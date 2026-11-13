@@ -7,7 +7,9 @@ import data
 ui.page_header(
     "Inspections · Phase 1",
     "Pass/fail trends",
-    "One inspection is one license on one date. It counts as failed if any of its rows has a failing result.",
+    "One inspection is one license on one date (int_inspections). It counts as failed if any of its "
+    "rows has a failing result. Follow-up visits, made within 30 days of a failed or critical "
+    "inspection, can be excluded to see routine inspections alone.",
 )
 ui.stub_notice()
 
@@ -19,26 +21,31 @@ months = sorted(monthly["month"].unique())
 # month, which makes the early fail rates meaningless. The slider still reaches back to the start.
 five_years_ago = months[-1].replace(year=months[-1].year - 5)
 default_start = next((m for m in months if m >= five_years_ago), months[0])
-c1, c2 = st.columns([1, 2])
+c1, c2, c3 = st.columns([1.2, 2, 1])
 selected_cats = c1.multiselect("License category", categories, default=categories)
 start, end = c2.select_slider(
     "Months", options=months, value=(default_start, months[-1]), format_func=lambda m: m.strftime("%b %Y")
 )
+routine_only = c3.checkbox("Routine only", help="Exclude follow-up visits (int_inspections.is_routine)")
 
-df = monthly[monthly["license_category"].isin(selected_cats) & monthly["month"].between(start, end)]
+mask = monthly["license_category"].isin(selected_cats) & monthly["month"].between(start, end)
+if routine_only:
+    mask &= monthly["is_routine"].fillna(False).astype(bool)
+df = monthly[mask]
 if df.empty:
     st.info("No inspections match these filters.")
     st.stop()
 
-by_month = df.groupby("month", as_index=False)[["n_inspections", "n_failed"]].sum()
+by_month = df.groupby("month", as_index=False)[["n_inspections", "n_failed", "n_critical"]].sum()
 by_month["fail_rate"] = by_month["n_failed"] / by_month["n_inspections"]
 
-total, failed = int(by_month["n_inspections"].sum()), int(by_month["n_failed"].sum())
-span = f"{start:%b %Y} to {end:%b %Y}"
+total, failed, critical = (int(by_month[c].sum()) for c in ["n_inspections", "n_failed", "n_critical"])
+span = f"{start:%b %Y} to {end:%b %Y}" + (" · routine only" if routine_only else "")
 ui.stat_row([
     ("Inspections", f"{total:,}", span),
     ("Failed", f"{failed:,}", "at least one failing result"),
     ("Fail rate", f"{failed / total:.1%}", "share of inspections"),
+    ("Critical", f"{critical / total:.1%}", f"{critical:,} had a *** violation, the ML target"),
 ])
 
 ui.section("Fail rate by month", "share of that month's inspections that failed")
@@ -62,6 +69,7 @@ with st.expander("Show as a table"):
             "month": st.column_config.DateColumn("Month", format="MMM YYYY"),
             "n_inspections": st.column_config.NumberColumn("Inspections", format="%d"),
             "n_failed": st.column_config.NumberColumn("Failed", format="%d"),
+            "n_critical": st.column_config.NumberColumn("With *** violation", format="%d"),
             "fail_rate": st.column_config.NumberColumn("Fail rate", format="percent"),
         },
     )

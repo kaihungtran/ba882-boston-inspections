@@ -7,8 +7,8 @@ import data
 ui.page_header(
     "Inspections · Phase 1",
     "Results by neighborhood",
-    "Inspections are placed in a neighborhood by their coordinates, or by the city field when "
-    "coordinates are missing. The boundaries are real, from stg_neighborhoods.",
+    "Each establishment's neighborhood comes from int_establishment_geo: the boundary containing its "
+    "median inspection location, or the city field when it has no coordinates.",
 )
 ui.stub_notice()
 
@@ -16,12 +16,16 @@ by_hood = data.inspections_by_neighborhood()
 shapes = data.neighborhood_shapes()
 
 years = sorted(by_hood["year"].dropna().astype(int).unique())
-c1, c2 = st.columns([2, 1])
+c1, c2, c3 = st.columns([2, 1.3, 1])
 start, end = c1.select_slider("Years", options=years, value=(years[0], years[-1]))
 min_inspections = c2.number_input("Hide neighborhoods with fewer inspections than", 0, 1000, 20, step=10)
+routine_only = c3.checkbox("Routine only", help="Exclude follow-up visits (int_inspections.is_routine)")
 
+mask = by_hood["year"].between(start, end)
+if routine_only:
+    mask &= by_hood["is_routine"].fillna(False).astype(bool)
 df = (
-    by_hood[by_hood["year"].between(start, end)]
+    by_hood[mask]
     .groupby("neighborhood", as_index=False)[["n_inspections", "n_failed", "n_establishments"]]
     .sum()
 )

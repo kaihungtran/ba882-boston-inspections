@@ -140,7 +140,9 @@ def _inspection_level(df: pd.DataFrame) -> pd.DataFrame:
         df.groupby(["license_number", "inspection_date"], as_index=False)
         .agg(license_category=("license_category", "first"),
              failed=("result_fail", "any"),
+             critical=("violation_level", lambda s: bool((s == "***").any())),
              city=("city", "first"))
+        .assign(is_routine=True)  # the stub has no follow-up visits
     )
 
 
@@ -148,8 +150,8 @@ def inspections_monthly(df: pd.DataFrame) -> pd.DataFrame:
     insp = _inspection_level(df)
     insp["month"] = pd.to_datetime(insp["inspection_date"]).dt.to_period("M").dt.to_timestamp()
     return (
-        insp.groupby(["month", "license_category"], as_index=False)
-        .agg(n_inspections=("failed", "size"), n_failed=("failed", "sum"))
+        insp.groupby(["month", "license_category", "is_routine"], as_index=False)
+        .agg(n_inspections=("failed", "size"), n_failed=("failed", "sum"), n_critical=("critical", "sum"))
         .sort_values("month")
     )
 
@@ -159,7 +161,7 @@ def inspections_by_neighborhood(df: pd.DataFrame) -> pd.DataFrame:
     by_upper = {name.upper(): name for name in NEIGHBORHOODS}
     insp["neighborhood"] = insp["city"].map(by_upper).fillna("Unmatched")
     insp["year"] = pd.to_datetime(insp["inspection_date"]).dt.year
-    return insp.groupby(["neighborhood", "year"], as_index=False).agg(
+    return insp.groupby(["neighborhood", "year", "is_routine"], as_index=False).agg(
         n_inspections=("failed", "size"),
         n_failed=("failed", "sum"),
         n_establishments=("license_number", "nunique"),

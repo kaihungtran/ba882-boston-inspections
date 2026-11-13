@@ -29,14 +29,14 @@ chartCategoricalColors = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4",
 chartSequentialColors = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
 
 [theme.light.sidebar]
-backgroundColor = "#132a44"
-secondaryBackgroundColor = "#1d3a58"
-textColor = "#dfe7ef"
-primaryColor = "#8fbcf0"
-linkColor = "#dfe7ef"
-borderColor = "#24436a"
-codeBackgroundColor = "#1d3a58"
-codeTextColor = "#cfe0f5"
+backgroundColor = "#261b15"
+secondaryBackgroundColor = "#3b2b22"
+textColor = "#efe6d8"
+primaryColor = "#d9a441"
+linkColor = "#efe6d8"
+borderColor = "#4a382d"
+codeBackgroundColor = "#3b2b22"
+codeTextColor = "#e8d7bd"
 
 [theme.dark]
 primaryColor = "#3987e5"
@@ -53,11 +53,11 @@ chartCategoricalColors = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181",
 chartSequentialColors = ["#0d366b", "#184f95", "#256abf", "#3987e5", "#6da7ec", "#9ec5f4", "#cde2fb"]
 
 [theme.dark.sidebar]
-backgroundColor = "#0e1c2e"
-secondaryBackgroundColor = "#1a3049"
-textColor = "#dfe7ef"
-primaryColor = "#8fbcf0"
-linkColor = "#dfe7ef"
-borderColor = "#24436a"
-codeBackgroundColor = "#1a3049"
-codeTextColor = "#cfe0f5"
+backgroundColor = "#1d1511"
+secondaryBackgroundColor = "#30241d"
+textColor = "#efe6d8"
+primaryColor = "#d9a441"
+linkColor = "#efe6d8"
+borderColor = "#4a382d"
+codeBackgroundColor = "#30241d"
+codeTextColor = "#e8d7bd"
